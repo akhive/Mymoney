@@ -1,20 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-type CookieToSet = {
-  name: string;
-  value: string;
-  options?: {
-    path?: string;
-    domain?: string;
-    maxAge?: number;
-    expires?: Date;
-    httpOnly?: boolean;
-    secure?: boolean;
-    sameSite?: "strict" | "lax" | "none";
-  };
-};
-
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -33,41 +19,46 @@ export async function updateSession(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet: CookieToSet[]) {
-          cookiesToSet.forEach((cookie) => {
-            request.cookies.set(cookie.name, cookie.value);
-          });
+        setAll(cookiesToSet) {
+          // 1. Update request cookies for downstream Server Components
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          );
+
+          // 2. Refresh response object
           supabaseResponse = NextResponse.next({
             request,
           });
-          cookiesToSet.forEach((cookie) => {
-            supabaseResponse.cookies.set(
-              cookie.name,
-              cookie.value,
-              cookie.options
-            );
-          });
+
+          // 3. Set cookies on response with safe options pass-through
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options as any)
+          );
         },
       },
     });
 
+    // Refresh auth session
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
     const path = request.nextUrl.pathname;
 
+    // Unauthenticated protection
     if (
       !user &&
       path !== "/" &&
       !path.startsWith("/login") &&
-      !path.startsWith("/signup")
+      !path.startsWith("/signup") &&
+      !path.startsWith("/auth")
     ) {
       const redirectUrl = request.nextUrl.clone();
       redirectUrl.pathname = "/login";
       return NextResponse.redirect(redirectUrl);
     }
 
+    // Authenticated user redirecting away from auth pages
     if (user && (path.startsWith("/login") || path.startsWith("/signup"))) {
       const redirectUrl = request.nextUrl.clone();
       redirectUrl.pathname = "/dashboard";
