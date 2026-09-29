@@ -5,6 +5,7 @@ export interface Profile {
   email: string;
   full_name: string | null;
   avatar_url: string | null;
+  preferred_currency: string;
   created_at: string;
   updated_at: string;
 }
@@ -43,7 +44,6 @@ export interface Transaction {
   date: string;
   created_at: string;
   updated_at: string;
-  // Joined fields
   account?: Account;
   category?: Category;
 }
@@ -53,7 +53,7 @@ export interface Budget {
   user_id: string;
   category_id: string;
   amount: number;
-  month: number; // 1-12
+  month: number;
   year: number;
   created_at: string;
   updated_at: string;
