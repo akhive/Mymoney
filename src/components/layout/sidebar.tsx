@@ -13,6 +13,7 @@ import {
   Tags,
   LogOut,
   PieChart,
+  Settings,
 } from "lucide-react";
 
 const navItems = [
@@ -21,6 +22,7 @@ const navItems = [
   { href: "/accounts", label: "Accounts", icon: CreditCard },
   { href: "/categories", label: "Categories", icon: Tags },
   { href: "/budgets", label: "Budgets", icon: PieChart },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 export function Sidebar() {
@@ -37,13 +39,11 @@ export function Sidebar() {
   return (
     <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 border-r bg-white">
       <div className="flex flex-col flex-1 min-h-0">
-        {/* Logo */}
         <div className="flex items-center gap-2 h-16 px-6 border-b font-bold text-lg">
           <Wallet className="h-6 w-6 text-primary" />
           <span>My Money</span>
         </div>
 
-        {/* Nav */}
         <nav className="flex-1 px-3 py-4 space-y-1">
           {navItems.map((item) => {
             const isActive =
@@ -67,7 +67,6 @@ export function Sidebar() {
           })}
         </nav>
 
-        {/* Logout */}
         <div className="p-3 border-t">
           <Button
             variant="ghost"
