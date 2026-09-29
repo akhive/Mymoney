@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { Category, TransactionType } from "@/types/database";
-import { Plus } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 
 const COLORS = [
   "#3b82f6",
@@ -30,6 +30,7 @@ export default function CategoriesPage() {
   const supabase = createClient();
   const [categories, setCategories] = useState<Category[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<Category | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,7 +38,7 @@ export default function CategoriesPage() {
   const [type, setType] = useState<TransactionType>("expense");
   const [color, setColor] = useState(COLORS[0]);
 
-  async function loadCategories() {
+  const loadCategories = useCallback(async () => {
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -51,14 +52,31 @@ export default function CategoriesPage() {
       .order("name");
 
     if (data) setCategories(data);
-  }
+  }, [supabase]);
 
   useEffect(() => {
     loadCategories();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadCategories]);
 
-  async function handleCreate(e: React.FormEvent) {
+  function openCreate() {
+    setEditing(null);
+    setName("");
+    setType("expense");
+    setColor(COLORS[0]);
+    setShowForm(true);
+    setError(null);
+  }
+
+  function openEdit(cat: Category) {
+    setEditing(cat);
+    setName(cat.name);
+    setType(cat.type);
+    setColor(cat.color);
+    setShowForm(true);
+    setError(null);
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
@@ -72,28 +90,92 @@ export default function CategoriesPage() {
       return;
     }
 
-    const { error: insertError } = await supabase.from("categories").insert({
-      user_id: user.id,
-      name,
-      type,
-      icon: "tag",
-      color,
-    });
+    if (editing) {
+      const { error: updateError } = await supabase
+        .from("categories")
+        .update({ name, type, color })
+        .eq("id", editing.id)
+        .eq("user_id", user.id);
 
-    if (insertError) {
-      setError(insertError.message);
-      setLoading(false);
-      return;
+      if (updateError) {
+        setError(updateError.message);
+        setLoading(false);
+        return;
+      }
+    } else {
+      const { error: insertError } = await supabase.from("categories").insert({
+        user_id: user.id,
+        name,
+        type,
+        icon: "tag",
+        color,
+      });
+
+      if (insertError) {
+        setError(insertError.message);
+        setLoading(false);
+        return;
+      }
     }
 
-    setName("");
     setShowForm(false);
+    setEditing(null);
     setLoading(false);
+    loadCategories();
+  }
+
+  async function handleDelete(cat: Category) {
+    if (!confirm(`Delete category "${cat.name}"?`)) return;
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    await supabase
+      .from("categories")
+      .delete()
+      .eq("id", cat.id)
+      .eq("user_id", user.id);
+
     loadCategories();
   }
 
   const incomeCats = categories.filter((c) => c.type === "income");
   const expenseCats = categories.filter((c) => c.type === "expense");
+
+  function CategoryList({ items }: { items: Category[] }) {
+    if (items.length === 0) {
+      return <p className="text-sm text-muted-foreground">None yet</p>;
+    }
+    return (
+      <div className="space-y-2">
+        {items.map((c) => (
+          <div
+            key={c.id}
+            className="flex items-center gap-3 py-2 border-b last:border-0"
+          >
+            <div
+              className="w-3 h-3 rounded-full shrink-0"
+              style={{ backgroundColor: c.color }}
+            />
+            <span className="flex-1">{c.name}</span>
+            <Button variant="ghost" size="sm" onClick={() => openEdit(c)}>
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-red-600"
+              onClick={() => handleDelete(c)}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -103,10 +185,10 @@ export default function CategoriesPage() {
             Categories
           </h1>
           <p className="text-muted-foreground">
-            Organize income and expenses
+            Organize, rename, or delete categories
           </p>
         </div>
-        <Button onClick={() => setShowForm(!showForm)}>
+        <Button onClick={showForm ? () => setShowForm(false) : openCreate}>
           <Plus className="h-4 w-4 mr-2" />
           {showForm ? "Cancel" : "Add category"}
         </Button>
@@ -115,9 +197,11 @@ export default function CategoriesPage() {
       {showForm && (
         <Card>
           <CardHeader>
-            <CardTitle>New category</CardTitle>
+            <CardTitle>
+              {editing ? "Edit category" : "New category"}
+            </CardTitle>
           </CardHeader>
-          <form onSubmit={handleCreate}>
+          <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
               {error && (
                 <div className="rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
@@ -169,7 +253,11 @@ export default function CategoriesPage() {
                 </div>
               </div>
               <Button type="submit" disabled={loading}>
-                {loading ? "Creating..." : "Create category"}
+                {loading
+                  ? "Saving..."
+                  : editing
+                    ? "Save changes"
+                    : "Create category"}
               </Button>
             </CardContent>
           </form>
@@ -182,23 +270,8 @@ export default function CategoriesPage() {
             <CardTitle className="text-green-600">Income</CardTitle>
             <CardDescription>{incomeCats.length} categories</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2">
-            {incomeCats.length === 0 ? (
-              <p className="text-sm text-muted-foreground">None yet</p>
-            ) : (
-              incomeCats.map((c) => (
-                <div
-                  key={c.id}
-                  className="flex items-center gap-3 py-2 border-b last:border-0"
-                >
-                  <div
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: c.color }}
-                  />
-                  <span>{c.name}</span>
-                </div>
-              ))
-            )}
+          <CardContent>
+            <CategoryList items={incomeCats} />
           </CardContent>
         </Card>
 
@@ -207,23 +280,8 @@ export default function CategoriesPage() {
             <CardTitle className="text-red-600">Expense</CardTitle>
             <CardDescription>{expenseCats.length} categories</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2">
-            {expenseCats.length === 0 ? (
-              <p className="text-sm text-muted-foreground">None yet</p>
-            ) : (
-              expenseCats.map((c) => (
-                <div
-                  key={c.id}
-                  className="flex items-center gap-3 py-2 border-b last:border-0"
-                >
-                  <div
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: c.color }}
-                  />
-                  <span>{c.name}</span>
-                </div>
-              ))
-            )}
+          <CardContent>
+            <CategoryList items={expenseCats} />
           </CardContent>
         </Card>
       </div>
