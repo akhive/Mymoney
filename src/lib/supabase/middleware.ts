@@ -1,6 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import type { ResponseCookie } from "next/dist/compiled/@edge-runtime/cookies";
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -20,7 +19,13 @@ export async function updateSession(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet) {
+        setAll(
+          cookiesToSet: Array<{
+            name: string;
+            value: string;
+            options?: Parameters<typeof supabaseResponse.cookies.set>[2];
+          }>
+        ) {
           // 1. Update request cookies for downstream Server Components
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
@@ -31,13 +36,9 @@ export async function updateSession(request: NextRequest) {
             request,
           });
 
-          // 3. Set cookies on response with proper ResponseCookie typing
+          // 3. Set cookies on response
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(
-              name,
-              value,
-              options as Partial<ResponseCookie>
-            )
+            supabaseResponse.cookies.set(name, value, options)
           );
         },
       },
