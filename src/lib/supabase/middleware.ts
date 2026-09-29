@@ -14,7 +14,13 @@ export async function updateSession(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet) {
+        setAll(
+          cookiesToSet: {
+            name: string;
+            value: string;
+            options?: Record<string, unknown>;
+          }[]
+        ) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
@@ -29,13 +35,10 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // IMPORTANT: Do not remove this line.
-  // It refreshes the Auth token and keeps the session alive.
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Protect dashboard routes
   if (
     !user &&
     !request.nextUrl.pathname.startsWith("/login") &&
@@ -47,7 +50,6 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Redirect logged-in users away from auth pages
   if (
     user &&
     (request.nextUrl.pathname.startsWith("/login") ||
