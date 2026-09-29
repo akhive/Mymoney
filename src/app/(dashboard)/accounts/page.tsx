@@ -65,6 +65,7 @@ export default function AccountsPage() {
 
   useEffect(() => {
     loadAccounts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleCreate(e: React.FormEvent) {
