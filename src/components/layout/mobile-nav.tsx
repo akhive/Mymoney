@@ -7,16 +7,16 @@ import {
   LayoutDashboard,
   ArrowLeftRight,
   CreditCard,
-  Tags,
   PieChart,
+  Settings,
 } from "lucide-react";
 
 const navItems = [
   { href: "/dashboard", label: "Home", icon: LayoutDashboard },
   { href: "/transactions", label: "Txns", icon: ArrowLeftRight },
   { href: "/accounts", label: "Accounts", icon: CreditCard },
-  { href: "/categories", label: "Cats", icon: Tags },
   { href: "/budgets", label: "Budgets", icon: PieChart },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 export function MobileNav() {
