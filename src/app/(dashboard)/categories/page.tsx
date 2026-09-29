@@ -13,7 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { Category, TransactionType } from "@/types/database";
-import { Plus, Tags } from "lucide-react";
+import { Plus } from "lucide-react";
 
 const COLORS = [
   "#3b82f6",
@@ -55,6 +55,7 @@ export default function CategoriesPage() {
 
   useEffect(() => {
     loadCategories();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleCreate(e: React.FormEvent) {
