@@ -24,7 +24,6 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
@@ -37,6 +36,7 @@ export default function SignupPage() {
       return;
     }
 
+    const supabase = createClient();
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -53,7 +53,6 @@ export default function SignupPage() {
       return;
     }
 
-    // After signup, redirect to dashboard (or show "check email" if email confirmation is on)
     router.push("/dashboard");
     router.refresh();
   }
