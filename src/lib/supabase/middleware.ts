@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import type { ResponseCookie } from "next/dist/compiled/@edge-runtime/cookies";
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -30,9 +31,13 @@ export async function updateSession(request: NextRequest) {
             request,
           });
 
-          // 3. Set cookies on response with safe options pass-through
+          // 3. Set cookies on response with proper ResponseCookie typing
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options as any)
+            supabaseResponse.cookies.set(
+              name,
+              value,
+              options as Partial<ResponseCookie>
+            )
           );
         },
       },
