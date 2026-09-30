@@ -66,4 +66,53 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  select {
+    color-scheme: light;
+  }
+
+  .dark select {
+    color-scheme: dark;
+  }
+
+  select option {
+    color: hsl(var(--foreground));
+    background-color: hsl(var(--background));
+  }
+}
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  [data-report-print],
+  [data-report-print] * {
+    visibility: visible !important;
+  }
+
+  [data-report-print] {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    padding: 0 !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  [data-report-controls] {
+    display: none !important;
+  }
+
+  [data-report-print] table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  [data-report-print] th,
+  [data-report-print] td {
+    border-bottom: 1px solid #d1d5db !important;
+    color: black !important;
+    padding: 6px !important;
+  }
 }
