@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { RecoveryRedirect } from "@/components/auth/recovery-redirect";
 import { Wallet, TrendingUp, Shield, Smartphone } from "lucide-react";
 
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100">
+      <RecoveryRedirect />
       {/* Header */}
       <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">

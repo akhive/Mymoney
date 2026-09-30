@@ -17,6 +17,9 @@ A multi-user personal finance tracker built with **Next.js 15** + **Supabase**.
 3. Open **SQL Editor** → paste and run the entire contents of `supabase/schema.sql`
 4. Go to Authentication → Providers → enable **Email**
 5. (Optional for testing) Authentication → Settings → turn **off** “Confirm email”
+6. In Authentication → URL Configuration, set **Site URL** to your deployed app
+   URL (not `localhost`) and add `https://<your-domain>/**` to **Redirect URLs**.
+   For local development, also allow `http://localhost:3000/**`.
 
 For an existing project, run `supabase/migration_v3.sql` in the SQL Editor to add the profile insert policy required for saving preferences.
 
