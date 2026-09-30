@@ -38,49 +38,70 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  // Fetch user profile for preferred currency
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("preferred_currency, full_name")
-    .eq("id", userId)
-    .maybeSingle();
+  const now = new Date();
+  const chartStart = new Date(now.getFullYear(), now.getMonth() - 4, 1);
+  const chartStartDate = chartStart.toISOString().split("T")[0];
+  const chartEndDate = now.toISOString().split("T")[0];
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+    .toISOString()
+    .split("T")[0];
+  const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    .toISOString()
+    .split("T")[0];
+  const endOfLastMonth = startOfMonth;
 
-  // Primary currency fallback
+  const [
+    { data: profile },
+    { data: accounts },
+    { data: recentTransactions },
+    { data: chartTransactions },
+    { data: monthTxns },
+    { data: lastMonthTxns },
+  ] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("preferred_currency, full_name")
+      .eq("id", userId)
+      .maybeSingle(),
+    supabase
+      .from("accounts")
+      .select("id, name, balance, color")
+      .eq("user_id", userId)
+      .eq("is_archived", false),
+    supabase
+      .from("transactions")
+      .select(
+        "id, type, amount, description, date, account:accounts(name), category:categories(name)"
+      )
+      .eq("user_id", userId)
+      .order("date", { ascending: false })
+      .limit(8),
+    supabase
+      .from("transactions")
+      .select("date, type, amount")
+      .eq("user_id", userId)
+      .gte("date", chartStartDate)
+      .lte("date", chartEndDate),
+    supabase
+      .from("transactions")
+      .select("type, amount, category_id")
+      .eq("user_id", userId)
+      .gte("date", startOfMonth),
+    supabase
+      .from("transactions")
+      .select("type, amount")
+      .eq("user_id", userId)
+      .gte("date", startOfLastMonth)
+      .lt("date", endOfLastMonth),
+  ]);
+
   const preferredCurrency = profile?.preferred_currency || "USD";
   const displayName =
     profile?.full_name ||
     (typeof claims?.email === "string" ? claims.email.split("@")[0] : "");
 
-  // Fetch active accounts
-  const { data: accounts } = await supabase
-    .from("accounts")
-    .select("id, name, balance, color")
-    .eq("user_id", userId)
-    .eq("is_archived", false);
-
   const totalBalance =
     accounts?.reduce((sum, a) => sum + Number(a.balance), 0) ?? 0;
-
-  // Fetch recent transactions with account & category details
-  const { data: recentTransactions } = await supabase
-    .from("transactions")
-    .select(
-      "id, type, amount, description, date, account:accounts(name), category:categories(name)"
-    )
-    .eq("user_id", userId)
-    .order("date", { ascending: false })
-    .limit(8);
-
-  const now = new Date();
-  const chartStart = new Date(now.getFullYear(), now.getMonth() - 4, 1);
-  const chartStartDate = chartStart.toISOString().split("T")[0];
-  const chartEndDate = now.toISOString().split("T")[0];
-  const { data: chartTransactions } = await supabase
-    .from("transactions")
-    .select("date, type, amount")
-    .eq("user_id", userId)
-    .gte("date", chartStartDate)
-    .lte("date", chartEndDate);
 
   const cashflowData = Array.from({ length: 5 }, (_, index) => {
     const monthStart = new Date(now.getFullYear(), now.getMonth() - 4 + index, 1);
@@ -103,29 +124,6 @@ export default async function DashboardPage() {
       month.expense += Number(transaction.amount);
     }
   });
-
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-    .toISOString()
-    .split("T")[0];
-  const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-    .toISOString()
-    .split("T")[0];
-  const endOfLastMonth = startOfMonth;
-
-  // Fetch current month transactions
-  const { data: monthTxns } = await supabase
-    .from("transactions")
-    .select("type, amount, category_id")
-    .eq("user_id", userId)
-    .gte("date", startOfMonth);
-
-  // Fetch last month transactions
-  const { data: lastMonthTxns } = await supabase
-    .from("transactions")
-    .select("type, amount")
-    .eq("user_id", userId)
-    .gte("date", startOfLastMonth)
-    .lt("date", endOfLastMonth);
 
   const income =
     monthTxns
@@ -151,11 +149,19 @@ export default async function DashboardPage() {
         (catSpend[t.category_id!] || 0) + Number(t.amount);
     });
 
-  const { data: cats } = await supabase
-    .from("categories")
-    .select("id, name, color")
-    .eq("user_id", userId)
-    .eq("type", "expense");
+  const [{ data: cats }, { data: budgets }] = await Promise.all([
+    supabase
+      .from("categories")
+      .select("id, name, color")
+      .eq("user_id", userId)
+      .eq("type", "expense"),
+    supabase
+      .from("budgets")
+      .select("id, amount, category_id, category:categories(name)")
+      .eq("user_id", userId)
+      .eq("month", now.getMonth() + 1)
+      .eq("year", now.getFullYear()),
+  ]);
 
   const topCategories = Object.entries(catSpend)
     .map(([id, amt]) => ({
@@ -167,14 +173,6 @@ export default async function DashboardPage() {
     .sort((a, b) => b.amount - a.amount);
 
   const maxCat = topCategories[0]?.amount || 1;
-
-  // Fetch Budgets Snapshot
-  const { data: budgets } = await supabase
-    .from("budgets")
-    .select("id, amount, category_id, category:categories(name)")
-    .eq("user_id", userId)
-    .eq("month", now.getMonth() + 1)
-    .eq("year", now.getFullYear());
 
   const budgetRows =
     budgets?.map((b) => {
