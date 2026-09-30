@@ -16,9 +16,14 @@ import { formatCurrency } from "@/lib/utils";
 import type { Budget, Category } from "@/types/database";
 import { Plus, Trash2, PieChart } from "lucide-react";
 
+type BudgetWithCategory = Budget & {
+  spent?: number;
+  category?: Category | Category[] | null;
+};
+
 export default function BudgetsPage() {
   const supabase = createClient();
-  const [budgets, setBudgets] = useState<(Budget & { spent?: number })[]>([]);
+  const [budgets, setBudgets] = useState<BudgetWithCategory[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [currency, setCurrency] = useState("USD");
   const [showForm, setShowForm] = useState(false);
@@ -82,8 +87,9 @@ export default function BudgetsPage() {
     });
 
     if (budgetRes.data) {
+      const rawBudgets = budgetRes.data as unknown as BudgetWithCategory[];
       setBudgets(
-        budgetRes.data.map((b) => ({
+        rawBudgets.map((b) => ({
           ...b,
           spent: spentMap[b.category_id] || 0,
         }))
@@ -265,13 +271,16 @@ export default function BudgetsPage() {
             const spent = b.spent || 0;
             const pct = Math.min(100, (spent / Number(b.amount)) * 100);
             const over = spent > Number(b.amount);
+            const categoryName = Array.isArray(b.category)
+              ? b.category[0]?.name
+              : b.category?.name;
+
             return (
               <Card key={b.id}>
                 <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
                   <div>
                     <CardTitle className="text-base">
-                      {(b.category as Category | undefined)?.name ||
-                        "Category"}
+                      {categoryName || "Category"}
                     </CardTitle>
                     <CardDescription>
                       {formatCurrency(spent, currency)} of{" "}
