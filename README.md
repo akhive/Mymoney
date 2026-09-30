@@ -20,8 +20,12 @@ A multi-user personal finance tracker built with **Next.js 15** + **Supabase**.
 6. In Authentication → URL Configuration, set **Site URL** to your deployed app
    URL (not `localhost`) and add `https://<your-domain>/**` to **Redirect URLs**.
    For local development, also allow `http://localhost:3000/**`.
+7. Disable public sign-ups in Supabase Auth settings so accounts are created only
+   by a Super User.
 
 For an existing project, run `supabase/migration_v3.sql` in the SQL Editor to add the profile insert policy required for saving preferences.
+
+For user management, run `supabase/migration_v4_user_management.sql` in the SQL Editor. Then promote your existing account to Super User by running `UPDATE public.profiles SET role = 'super_user' WHERE email = 'your-email@example.com';`. Add `SUPABASE_SERVICE_ROLE_KEY` to the server environment in `.env.local` and Vercel. Never expose this key to the browser.
 
 ### 2. Setup the app
 
@@ -51,6 +55,7 @@ git push -u origin main
 2. Add environment variables:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY` (server-only)
 3. Deploy
 
 ### 4. Custom domain (Cloudflare)

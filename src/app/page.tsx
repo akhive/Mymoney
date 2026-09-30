@@ -18,9 +18,6 @@ export default function HomePage() {
             <Button variant="ghost" asChild>
               <Link href="/login">Log in</Link>
             </Button>
-            <Button asChild>
-              <Link href="/signup">Get started</Link>
-            </Button>
           </div>
         </div>
       </header>
@@ -37,12 +34,12 @@ export default function HomePage() {
             accounts, and see where your money goes — all in one place.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" asChild>
-              <Link href="/signup">Create free account</Link>
-            </Button>
             <Button size="lg" variant="outline" asChild>
               <Link href="/login">I already have an account</Link>
             </Button>
+            <p className="flex items-center justify-center text-sm text-slate-600">
+              New accounts are created by a Super User.
+            </p>
           </div>
         </div>
 

@@ -14,6 +14,7 @@ import {
   LogOut,
   PieChart,
   Settings,
+  Users,
 } from "lucide-react";
 
 const navItems = [
@@ -23,9 +24,10 @@ const navItems = [
   { href: "/categories", label: "Categories", icon: Tags },
   { href: "/budgets", label: "Budgets", icon: PieChart },
   { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/users", label: "User management", icon: Users, superUserOnly: true },
 ];
 
-export function Sidebar() {
+export function Sidebar({ isSuperUser }: { isSuperUser: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
@@ -45,7 +47,9 @@ export function Sidebar() {
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1">
-          {navItems.map((item) => {
+          {navItems
+            .filter((item) => !item.superUserOnly || isSuperUser)
+            .map((item) => {
             const isActive =
               pathname === item.href ||
               (item.href !== "/dashboard" && pathname.startsWith(item.href));
@@ -64,7 +68,7 @@ export function Sidebar() {
                 {item.label}
               </Link>
             );
-          })}
+            })}
         </nav>
 
         <div className="p-3 border-t">

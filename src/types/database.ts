@@ -1,9 +1,12 @@
 export type TransactionType = "income" | "expense";
+export type UserRole = "super_user" | "admin" | "user";
 
 export interface Profile {
   id: string;
   email: string;
   full_name: string | null;
+  job_title: string | null;
+  role: UserRole;
   avatar_url: string | null;
   preferred_currency: string;
   created_at: string;

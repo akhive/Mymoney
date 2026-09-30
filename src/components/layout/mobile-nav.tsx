@@ -9,6 +9,7 @@ import {
   CreditCard,
   PieChart,
   Settings,
+  Users,
 } from "lucide-react";
 
 const navItems = [
@@ -17,15 +18,18 @@ const navItems = [
   { href: "/accounts", label: "Accounts", icon: CreditCard },
   { href: "/budgets", label: "Budgets", icon: PieChart },
   { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/users", label: "Users", icon: Users, superUserOnly: true },
 ];
 
-export function MobileNav() {
+export function MobileNav({ isSuperUser }: { isSuperUser: boolean }) {
   const pathname = usePathname();
 
   return (
     <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 border-t bg-white">
       <div className="flex items-center justify-around h-16">
-        {navItems.map((item) => {
+        {navItems
+          .filter((item) => !item.superUserOnly || isSuperUser)
+          .map((item) => {
           const isActive =
             pathname === item.href ||
             (item.href !== "/dashboard" && pathname.startsWith(item.href));
@@ -42,7 +46,7 @@ export function MobileNav() {
               <span>{item.label}</span>
             </Link>
           );
-        })}
+          })}
       </div>
     </nav>
   );

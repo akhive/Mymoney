@@ -13,7 +13,10 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email TEXT,
   full_name TEXT,
+  job_title TEXT,
+  role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('super_user', 'admin', 'user')),
   avatar_url TEXT,
+  preferred_currency TEXT NOT NULL DEFAULT 'USD',
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
   updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
@@ -129,6 +132,12 @@ CREATE POLICY "Users can insert own profile"
 CREATE POLICY "Users can update own profile"
   ON public.profiles FOR UPDATE
   USING (auth.uid() = id);
+
+REVOKE INSERT, UPDATE ON public.profiles FROM authenticated;
+GRANT INSERT (id, email, full_name, preferred_currency, updated_at)
+  ON public.profiles TO authenticated;
+GRANT UPDATE (id, email, full_name, avatar_url, preferred_currency, updated_at)
+  ON public.profiles TO authenticated;
 
 -- Accounts
 CREATE POLICY "Users can manage own accounts"
