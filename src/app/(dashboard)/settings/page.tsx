@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -15,6 +16,7 @@ import { CURRENCIES } from "@/lib/utils";
 
 export default function SettingsPage() {
   const supabase = createClient();
+  const router = useRouter();
   const [currency, setCurrency] = useState("USD");
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
@@ -70,6 +72,7 @@ export default function SettingsPage() {
       setMessage(error.message);
     } else {
       setMessage("Settings saved.");
+      router.refresh();
     }
     setLoading(false);
   }

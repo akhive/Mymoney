@@ -20,8 +20,8 @@ import { Button } from "@/components/ui/button";
 import { DashboardCharts } from "./dashboard-charts";
 
 type JoinedAccount =
-  | { name?: string; currency?: string }
-  | { name?: string; currency?: string }[]
+  | { name?: string }
+  | { name?: string }[]
   | null;
 
 type JoinedCategory = { name?: string } | { name?: string }[] | null;
@@ -52,7 +52,7 @@ export default async function DashboardPage() {
   // Fetch active accounts
   const { data: accounts } = await supabase
     .from("accounts")
-    .select("id, name, balance, color, currency")
+    .select("id, name, balance, color")
     .eq("user_id", user.id)
     .eq("is_archived", false);
 
@@ -63,7 +63,7 @@ export default async function DashboardPage() {
   const { data: recentTransactions } = await supabase
     .from("transactions")
     .select(
-      "id, type, amount, description, date, account:accounts(name, currency), category:categories(name)"
+      "id, type, amount, description, date, account:accounts(name), category:categories(name)"
     )
     .eq("user_id", user.id)
     .order("date", { ascending: false })
@@ -288,10 +288,7 @@ export default async function DashboardPage() {
                       </span>
                     </div>
                     <span className="text-sm font-semibold whitespace-nowrap">
-                      {formatCurrency(
-                        Number(a.balance),
-                        a.currency || preferredCurrency
-                      )}
+                      {formatCurrency(Number(a.balance), preferredCurrency)}
                     </span>
                   </div>
                 ))}
@@ -404,9 +401,6 @@ export default async function DashboardPage() {
                 const cat = txn.category as JoinedCategory;
 
                 const accountName = Array.isArray(acc) ? acc[0]?.name : acc?.name;
-                const txnCurrency =
-                  (Array.isArray(acc) ? acc[0]?.currency : acc?.currency) ||
-                  preferredCurrency;
                 const categoryName = Array.isArray(cat)
                   ? cat[0]?.name
                   : cat?.name;
@@ -433,7 +427,7 @@ export default async function DashboardPage() {
                       }
                     >
                       {txn.type === "income" ? "+" : "-"}
-                      {formatCurrency(Number(txn.amount), txnCurrency)}
+                      {formatCurrency(Number(txn.amount), preferredCurrency)}
                     </span>
                   </div>
                 );
