@@ -40,6 +40,13 @@ type PeriodPreset =
   | "custom"
   | "all_time";
 
+interface ReportFilters {
+  accountId: string;
+  dateFrom: string;
+  dateTo: string;
+  search: string;
+}
+
 function dateInputValue(date: Date) {
   const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
   return localDate.toISOString().slice(0, 10);
@@ -68,29 +75,40 @@ export function ReportsView({
   accounts,
   currency,
 }: ReportsViewProps) {
-  const initialPeriod = getPeriodDates("this_month");
-  const [preset, setPreset] = useState<PeriodPreset>("this_month");
-  const [dateFrom, setDateFrom] = useState(initialPeriod.from);
-  const [dateTo, setDateTo] = useState(initialPeriod.to);
+  const [preset, setPreset] = useState<PeriodPreset>("all_time");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [accountId, setAccountId] = useState("all");
   const [search, setSearch] = useState("");
+  const [appliedFilters, setAppliedFilters] = useState<ReportFilters>({
+    accountId: "all",
+    dateFrom: "",
+    dateTo: "",
+    search: "",
+  });
 
-  const selectedAccount = accounts.find((account) => account.id === accountId);
+  const selectedAccount = accounts.find(
+    (account) => account.id === appliedFilters.accountId
+  );
   const accountLabel = selectedAccount
     ? `${selectedAccount.name} (${selectedAccount.currency})`
     : "All accounts";
-  const periodLabel = dateFrom || dateTo
-    ? `${dateFrom || "Beginning"} to ${dateTo || "Today"}`
+  const periodLabel = appliedFilters.dateFrom || appliedFilters.dateTo
+    ? `${appliedFilters.dateFrom || "Beginning"} to ${appliedFilters.dateTo || "Today"}`
     : "All dates";
 
   const filteredTransactions = useMemo(() => {
-    const query = search.trim().toLocaleLowerCase();
+    const query = appliedFilters.search.trim().toLocaleLowerCase();
     return transactions
       .filter((transaction) => {
         const matchesAccount =
-          accountId === "all" || transaction.account_id === accountId;
-        const matchesFrom = !dateFrom || transaction.date >= dateFrom;
-        const matchesTo = !dateTo || transaction.date <= dateTo;
+          appliedFilters.accountId === "all" ||
+          transaction.account_id === appliedFilters.accountId;
+        const matchesFrom =
+          !appliedFilters.dateFrom ||
+          transaction.date >= appliedFilters.dateFrom;
+        const matchesTo =
+          !appliedFilters.dateTo || transaction.date <= appliedFilters.dateTo;
         const matchesSearch =
           !query ||
           [
@@ -101,7 +119,7 @@ export function ReportsView({
         return matchesAccount && matchesFrom && matchesTo && matchesSearch;
       })
       .sort((a, b) => b.date.localeCompare(a.date));
-  }, [accountId, dateFrom, dateTo, search, transactions]);
+  }, [appliedFilters, transactions]);
 
   const totalsByCurrency = useMemo(
     () =>
@@ -140,14 +158,14 @@ export function ReportsView({
   }
 
   function filePeriod() {
-    return `${dateFrom || "all"}_to_${dateTo || "time"}`;
+    return `${appliedFilters.dateFrom || "all"}_to_${appliedFilters.dateTo || "time"}`;
   }
 
   function exportToExcel() {
     const rows = [
       ["Report period", periodLabel],
       ["Account", accountLabel],
-      ["Search", search || "All transactions"],
+      ["Search", appliedFilters.search || "All transactions"],
       [],
       ["Date", "Description", "Category", "Account", "Amount"],
       ...filteredTransactions.map((transaction) => [
@@ -269,6 +287,17 @@ export function ReportsView({
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
+        </div>
+        <div className="flex justify-end sm:col-span-2 lg:col-span-4">
+          <Button
+            type="button"
+            onClick={() =>
+              setAppliedFilters({ accountId, dateFrom, dateTo, search })
+            }
+          >
+            <Search className="mr-2 h-4 w-4" />
+            Search
+          </Button>
         </div>
       </div>
 
