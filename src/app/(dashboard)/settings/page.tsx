@@ -137,24 +137,6 @@ export default function SettingsPage() {
         </form>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Forgot password?</CardTitle>
-          <CardDescription>
-            Passwords cannot be viewed by anyone (including you). To recover:
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="text-sm text-muted-foreground space-y-2">
-          <p>
-            1. Supabase Dashboard → Authentication → Users → select your user →
-            send recovery email
-          </p>
-          <p>
-            2. Or delete the user and create a new one with{" "}
-            <strong>Auto Confirm</strong> checked
-          </p>
-        </CardContent>
-      </Card>
     </div>
   );
 }
