@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { DashboardCharts } from "./dashboard-charts";
 
 type JoinedAccount =
   | { name?: string; currency?: string }
@@ -36,16 +37,19 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
+  // Fetch user profile for preferred currency
   const { data: profile } = await supabase
     .from("profiles")
     .select("preferred_currency, full_name")
     .eq("id", user.id)
     .maybeSingle();
 
-  const currency = profile?.preferred_currency || "USD";
+  // Primary currency fallback
+  const preferredCurrency = profile?.preferred_currency || "USD";
   const displayName =
     profile?.full_name || user.user_metadata?.full_name || "";
 
+  // Fetch active accounts
   const { data: accounts } = await supabase
     .from("accounts")
     .select("id, name, balance, color, currency")
@@ -55,6 +59,7 @@ export default async function DashboardPage() {
   const totalBalance =
     accounts?.reduce((sum, a) => sum + Number(a.balance), 0) ?? 0;
 
+  // Fetch recent transactions with account & category details
   const { data: recentTransactions } = await supabase
     .from("transactions")
     .select(
@@ -73,12 +78,14 @@ export default async function DashboardPage() {
     .split("T")[0];
   const endOfLastMonth = startOfMonth;
 
+  // Fetch current month transactions
   const { data: monthTxns } = await supabase
     .from("transactions")
     .select("type, amount, category_id")
     .eq("user_id", user.id)
     .gte("date", startOfMonth);
 
+  // Fetch last month transactions
   const { data: lastMonthTxns } = await supabase
     .from("transactions")
     .select("type, amount")
@@ -101,7 +108,7 @@ export default async function DashboardPage() {
       ?.filter((t) => t.type === "expense")
       .reduce((sum, t) => sum + Number(t.amount), 0) ?? 0;
 
-  // Top expense categories this month
+  // Calculate Category Spend Breakdown
   const catSpend: Record<string, number> = {};
   monthTxns
     ?.filter((t) => t.type === "expense" && t.category_id)
@@ -123,12 +130,11 @@ export default async function DashboardPage() {
       name: cats?.find((c) => c.id === id)?.name || "Other",
       color: cats?.find((c) => c.id === id)?.color || "#64748b",
     }))
-    .sort((a, b) => b.amount - a.amount)
-    .slice(0, 5);
+    .sort((a, b) => b.amount - a.amount);
 
   const maxCat = topCategories[0]?.amount || 1;
 
-  // Budgets progress
+  // Fetch Budgets Snapshot
   const { data: budgets } = await supabase
     .from("budgets")
     .select("id, amount, category_id, category:categories(name)")
@@ -152,6 +158,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
@@ -169,7 +176,7 @@ export default async function DashboardPage() {
         </Button>
       </div>
 
-      {/* Summary cards */}
+      {/* Metric Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -178,10 +185,10 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {formatCurrency(totalBalance, currency)}
+              {formatCurrency(totalBalance, preferredCurrency)}
             </div>
             <p className="text-xs text-muted-foreground">
-              {accounts?.length || 0} account
+              {accounts?.length || 0} active account
               {(accounts?.length || 0) !== 1 ? "s" : ""}
             </p>
           </CardContent>
@@ -192,11 +199,11 @@ export default async function DashboardPage() {
             <CardTitle className="text-sm font-medium">
               Income (this month)
             </CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-600" />
+            <TrendingUp className="h-4 w-4 text-emerald-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {formatCurrency(income, currency)}
+            <div className="text-2xl font-bold text-emerald-600">
+              {formatCurrency(income, preferredCurrency)}
             </div>
             <p className="text-xs text-muted-foreground">
               {now.toLocaleString("default", { month: "long" })}
@@ -209,15 +216,15 @@ export default async function DashboardPage() {
             <CardTitle className="text-sm font-medium">
               Expenses (this month)
             </CardTitle>
-            <TrendingDown className="h-4 w-4 text-red-600" />
+            <TrendingDown className="h-4 w-4 text-rose-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {formatCurrency(expense, currency)}
+            <div className="text-2xl font-bold text-rose-600">
+              {formatCurrency(expense, preferredCurrency)}
             </div>
             <p className="text-xs text-muted-foreground">
               {lastExpense > 0
-                ? `vs ${formatCurrency(lastExpense, currency)} last month`
+                ? `vs ${formatCurrency(lastExpense, preferredCurrency)} last month`
                 : now.toLocaleString("default", { month: "long" })}
             </p>
           </CardContent>
@@ -225,35 +232,43 @@ export default async function DashboardPage() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Net this month</CardTitle>
+            <CardTitle className="text-sm font-medium">Net Growth</CardTitle>
             <PiggyBank className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div
               className={`text-2xl font-bold ${
-                net >= 0 ? "text-green-600" : "text-red-600"
+                net >= 0 ? "text-emerald-600" : "text-rose-600"
               }`}
             >
-              {formatCurrency(net, currency)}
+              {formatCurrency(net, preferredCurrency)}
             </div>
             <p className="text-xs text-muted-foreground">Income − expenses</p>
           </CardContent>
         </Card>
       </div>
 
+      {/* Interactive Pie & Bar Charts */}
+      <DashboardCharts
+        topCategories={topCategories}
+        income={income}
+        expense={expense}
+        currency={preferredCurrency}
+      />
+
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Accounts breakdown */}
+        {/* Accounts Breakdown */}
         <Card>
           <CardHeader>
-            <CardTitle>Accounts</CardTitle>
-            <CardDescription>Balances by account</CardDescription>
+            <CardTitle>Accounts Summary</CardTitle>
+            <CardDescription>Balances per individual account</CardDescription>
           </CardHeader>
           <CardContent>
             {!accounts || accounts.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                No accounts yet.{" "}
+                No accounts found.{" "}
                 <Link href="/accounts" className="text-primary underline">
-                  Add one
+                  Add an account
                 </Link>
               </p>
             ) : (
@@ -261,12 +276,12 @@ export default async function DashboardPage() {
                 {accounts.map((a) => (
                   <div
                     key={a.id}
-                    className="flex items-center justify-between gap-3"
+                    className="flex items-center justify-between gap-3 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <div
-                        className="w-2.5 h-2.5 rounded-full shrink-0"
-                        style={{ backgroundColor: a.color }}
+                        className="w-3 h-3 rounded-full shrink-0"
+                        style={{ backgroundColor: a.color || "#64748b" }}
                       />
                       <span className="truncate text-sm font-medium">
                         {a.name}
@@ -275,7 +290,7 @@ export default async function DashboardPage() {
                     <span className="text-sm font-semibold whitespace-nowrap">
                       {formatCurrency(
                         Number(a.balance),
-                        a.currency || currency
+                        a.currency || preferredCurrency
                       )}
                     </span>
                   </div>
@@ -285,28 +300,28 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Top spending */}
+        {/* Top Expense Categories */}
         <Card>
           <CardHeader>
-            <CardTitle>Top spending</CardTitle>
-            <CardDescription>By category this month</CardDescription>
+            <CardTitle>Top Spending Breakdown</CardTitle>
+            <CardDescription>Highest expenditure categories</CardDescription>
           </CardHeader>
           <CardContent>
             {topCategories.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                No expenses categorized yet.
+                No categorized expenses this month.
               </p>
             ) : (
-              <div className="space-y-3">
-                {topCategories.map((c) => (
+              <div className="space-y-4">
+                {topCategories.slice(0, 5).map((c) => (
                   <div key={c.id} className="space-y-1">
                     <div className="flex justify-between text-sm">
                       <span className="font-medium">{c.name}</span>
-                      <span>{formatCurrency(c.amount, currency)}</span>
+                      <span>{formatCurrency(c.amount, preferredCurrency)}</span>
                     </div>
-                    <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                    <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                       <div
-                        className="h-full rounded-full"
+                        className="h-full rounded-full transition-all duration-500"
                         style={{
                           width: `${(c.amount / maxCat) * 100}%`,
                           backgroundColor: c.color,
@@ -321,13 +336,13 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
-      {/* Budgets snapshot */}
+      {/* Budgets Progress */}
       {budgetRows.length > 0 && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle>Budgets this month</CardTitle>
-              <CardDescription>Progress vs limits</CardDescription>
+              <CardTitle>Budget Limits</CardTitle>
+              <CardDescription>Current month tracking</CardDescription>
             </div>
             <Button variant="outline" size="sm" asChild>
               <Link href="/budgets">View all</Link>
@@ -339,18 +354,18 @@ export default async function DashboardPage() {
                 const pct = Math.min(100, (b.spent / b.amount) * 100);
                 const over = b.spent > b.amount;
                 return (
-                  <div key={b.id} className="space-y-1">
+                  <div key={b.id} className="space-y-1 p-3 border rounded-lg">
                     <div className="flex justify-between text-sm">
                       <span className="font-medium">{b.name}</span>
-                      <span className={over ? "text-red-600" : ""}>
-                        {formatCurrency(b.spent, currency)} /{" "}
-                        {formatCurrency(b.amount, currency)}
+                      <span className={over ? "text-rose-600 font-bold" : ""}>
+                        {formatCurrency(b.spent, preferredCurrency)} /{" "}
+                        {formatCurrency(b.amount, preferredCurrency)}
                       </span>
                     </div>
-                    <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+                    <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                       <div
-                        className={`h-full rounded-full ${
-                          over ? "bg-red-500" : "bg-primary"
+                        className={`h-full rounded-full transition-all ${
+                          over ? "bg-rose-500" : "bg-primary"
                         }`}
                         style={{ width: `${pct}%` }}
                       />
@@ -363,12 +378,12 @@ export default async function DashboardPage() {
         </Card>
       )}
 
-      {/* Recent transactions */}
+      {/* Recent Transactions Table */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>Recent transactions</CardTitle>
-            <CardDescription>Your latest activity</CardDescription>
+            <CardTitle>Recent Activity</CardTitle>
+            <CardDescription>Latest transactions recorded</CardDescription>
           </div>
           <Button variant="outline" size="sm" asChild>
             <Link href="/transactions">View all</Link>
@@ -377,9 +392,9 @@ export default async function DashboardPage() {
         <CardContent>
           {!recentTransactions || recentTransactions.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              <p>No transactions yet.</p>
+              <p>No recent activity found.</p>
               <Button variant="link" asChild className="mt-2">
-                <Link href="/transactions/new">Add your first transaction</Link>
+                <Link href="/transactions/new">Create a transaction</Link>
               </Button>
             </div>
           ) : (
@@ -391,7 +406,7 @@ export default async function DashboardPage() {
                 const accountName = Array.isArray(acc) ? acc[0]?.name : acc?.name;
                 const txnCurrency =
                   (Array.isArray(acc) ? acc[0]?.currency : acc?.currency) ||
-                  currency;
+                  preferredCurrency;
                 const categoryName = Array.isArray(cat)
                   ? cat[0]?.name
                   : cat?.name;
@@ -402,10 +417,10 @@ export default async function DashboardPage() {
                     className="flex items-center justify-between py-2 border-b last:border-0"
                   >
                     <div>
-                      <p className="font-medium">
+                      <p className="font-medium text-sm">
                         {txn.description || "Untitled"}
                       </p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-xs text-muted-foreground">
                         {accountName ? `${accountName} · ` : ""}
                         {categoryName ?? "Uncategorized"} · {formatDate(txn.date)}
                       </p>
@@ -413,8 +428,8 @@ export default async function DashboardPage() {
                     <span
                       className={
                         txn.type === "income"
-                          ? "font-semibold text-green-600"
-                          : "font-semibold text-red-600"
+                          ? "font-semibold text-emerald-600"
+                          : "font-semibold text-rose-600"
                       }
                     >
                       {txn.type === "income" ? "+" : "-"}
