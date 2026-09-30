@@ -68,7 +68,7 @@ export default function TransactionsPage() {
         .maybeSingle(),
     ]);
 
-    if (txnRes.data) setTransactions(txnRes.data as TxnRow[]);
+    if (txnRes.data) setTransactions(txnRes.data as unknown as TxnRow[]);
     if (accRes.data) setAccounts(accRes.data);
     if (catRes.data) setCategories(catRes.data);
     if (profileRes.data?.preferred_currency)
