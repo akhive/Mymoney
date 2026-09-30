@@ -39,11 +39,11 @@ export function Sidebar({ isSuperUser }: { isSuperUser: boolean }) {
   }
 
   return (
-    <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 border-r bg-white">
+    <aside className="fixed inset-y-0 hidden w-64 flex-col border-r border-slate-200 bg-white md:flex dark:border-slate-800/80 dark:bg-slate-900/70">
       <div className="flex flex-col flex-1 min-h-0">
-        <div className="flex items-center gap-2 h-16 px-6 border-b font-bold text-lg">
-          <Wallet className="h-6 w-6 text-primary" />
-          <span>My Money</span>
+        <div className="flex items-center gap-2 h-16 px-6 border-b border-slate-200 font-bold text-lg dark:border-slate-800/80">
+          <Wallet className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+          <span className="text-slate-900 dark:text-white">My Money</span>
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1">
@@ -58,10 +58,10 @@ export function Sidebar({ isSuperUser }: { isSuperUser: boolean }) {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                  "flex items-center gap-3 rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
                   isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                    ? "border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-500/20 dark:bg-indigo-500/10 dark:text-indigo-300"
+                    : "border-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/60 dark:hover:text-white"
                 )}
               >
                 <item.icon className="h-5 w-5" />
@@ -71,10 +71,10 @@ export function Sidebar({ isSuperUser }: { isSuperUser: boolean }) {
             })}
         </nav>
 
-        <div className="p-3 border-t">
+        <div className="border-t border-slate-200 p-3 dark:border-slate-800/80">
           <Button
             variant="ghost"
-            className="w-full justify-start gap-3 text-slate-600"
+            className="w-full justify-start gap-3 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
             onClick={handleLogout}
           >
             <LogOut className="h-5 w-5" />

@@ -18,6 +18,7 @@ import {
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { DashboardCharts } from "./dashboard-charts";
+import { DashboardThemeToggle } from "@/components/layout/dashboard-theme";
 
 type JoinedAccount =
   | { name?: string }
@@ -161,68 +162,84 @@ export default async function DashboardPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700 dark:border-indigo-500/20 dark:bg-indigo-500/10 dark:text-indigo-300">
+            <span className="h-2 w-2 animate-pulse rounded-full bg-indigo-500 dark:bg-indigo-400" />
+            Live overview
+          </div>
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white md:text-3xl">
             Dashboard
           </h1>
-          <p className="text-muted-foreground">
-            Welcome back{displayName ? `, ${displayName}` : ""}
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
+            Welcome back{displayName ? `, ${displayName}` : ""}. Here is your financial summary.
           </p>
         </div>
-        <Button asChild>
-          <Link href="/transactions/new">
-            <ArrowLeftRight className="h-4 w-4 mr-2" />
-            Add transaction
-          </Link>
-        </Button>
+        <div className="flex items-center gap-3">
+          <DashboardThemeToggle />
+          <Button
+            asChild
+            className="bg-indigo-600 text-white shadow-md shadow-indigo-950/20 hover:bg-indigo-500"
+          >
+            <Link href="/transactions/new">
+              <ArrowLeftRight className="mr-1.5 h-4 w-4" />
+              Add transaction
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Metric Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card className="border-slate-200 bg-white shadow-sm transition-colors duration-200 dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Balance</CardTitle>
-            <Wallet className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Balance</CardTitle>
+            <span className="rounded-md border border-indigo-200 bg-indigo-50 p-2 text-indigo-600 dark:border-indigo-500/20 dark:bg-indigo-500/10 dark:text-indigo-400">
+              <Wallet className="h-4 w-4" />
+            </span>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
+            <div className="mt-1 text-xl font-extrabold text-slate-900 dark:text-white">
               {formatCurrency(totalBalance, preferredCurrency)}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-[10px] text-slate-500 dark:text-slate-400">
               {accounts?.length || 0} active account
               {(accounts?.length || 0) !== 1 ? "s" : ""}
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-slate-200 bg-white shadow-sm transition-colors duration-200 dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-xs font-medium text-slate-500 dark:text-slate-400">
               Income (this month)
             </CardTitle>
-            <TrendingUp className="h-4 w-4 text-emerald-600" />
+            <span className="rounded-md border border-emerald-200 bg-emerald-50 p-2 text-emerald-600 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-400">
+              <TrendingUp className="h-4 w-4" />
+            </span>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-emerald-600">
+            <div className="mt-1 text-xl font-extrabold text-emerald-600 dark:text-emerald-400">
               {formatCurrency(income, preferredCurrency)}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-[10px] text-slate-500 dark:text-slate-400">
               {now.toLocaleString("default", { month: "long" })}
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-slate-200 bg-white shadow-sm transition-colors duration-200 dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+            <CardTitle className="text-xs font-medium text-slate-500 dark:text-slate-400">
               Expenses (this month)
             </CardTitle>
-            <TrendingDown className="h-4 w-4 text-rose-600" />
+            <span className="rounded-md border border-rose-200 bg-rose-50 p-2 text-rose-600 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-400">
+              <TrendingDown className="h-4 w-4" />
+            </span>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-rose-600">
+            <div className="mt-1 text-xl font-extrabold text-rose-600 dark:text-rose-400">
               {formatCurrency(expense, preferredCurrency)}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-[10px] text-slate-500 dark:text-slate-400">
               {lastExpense > 0
                 ? `vs ${formatCurrency(lastExpense, preferredCurrency)} last month`
                 : now.toLocaleString("default", { month: "long" })}
@@ -230,20 +247,24 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-slate-200 bg-white shadow-sm transition-colors duration-200 dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Net Growth</CardTitle>
-            <PiggyBank className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-xs font-medium text-slate-500 dark:text-slate-400">Net Growth</CardTitle>
+            <span className="rounded-md border border-violet-200 bg-violet-50 p-2 text-violet-600 dark:border-violet-500/20 dark:bg-violet-500/10 dark:text-violet-400">
+              <PiggyBank className="h-4 w-4" />
+            </span>
           </CardHeader>
           <CardContent>
             <div
-              className={`text-2xl font-bold ${
-                net >= 0 ? "text-emerald-600" : "text-rose-600"
+              className={`mt-1 text-xl font-extrabold ${
+                net >= 0
+                  ? "text-emerald-600 dark:text-emerald-400"
+                  : "text-rose-600 dark:text-rose-400"
               }`}
             >
               {formatCurrency(net, preferredCurrency)}
             </div>
-            <p className="text-xs text-muted-foreground">Income − expenses</p>
+            <p className="text-[10px] text-slate-500 dark:text-slate-400">Income − expenses</p>
           </CardContent>
         </Card>
       </div>
@@ -354,7 +375,13 @@ export default async function DashboardPage() {
                   <div key={b.id} className="space-y-1 p-3 border rounded-lg">
                     <div className="flex justify-between text-sm">
                       <span className="font-medium">{b.name}</span>
-                      <span className={over ? "text-rose-600 font-bold" : ""}>
+                      <span
+                        className={
+                          over
+                            ? "font-bold text-rose-600 dark:text-rose-400"
+                            : "text-slate-700 dark:text-slate-300"
+                        }
+                      >
                         {formatCurrency(b.spent, preferredCurrency)} /{" "}
                         {formatCurrency(b.amount, preferredCurrency)}
                       </span>
@@ -422,8 +449,8 @@ export default async function DashboardPage() {
                     <span
                       className={
                         txn.type === "income"
-                          ? "font-semibold text-emerald-600"
-                          : "font-semibold text-rose-600"
+                          ? "font-semibold text-emerald-600 dark:text-emerald-400"
+                          : "font-semibold text-rose-600 dark:text-rose-400"
                       }
                     >
                       {txn.type === "income" ? "+" : "-"}
@@ -436,6 +463,14 @@ export default async function DashboardPage() {
           )}
         </CardContent>
       </Card>
+
+      <footer className="flex items-center justify-between border-t border-slate-200 pt-4 text-xs text-slate-500 dark:border-slate-800/60 dark:text-slate-400">
+        <span className="flex items-center gap-1.5 font-medium">
+          <Wallet className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+          My Money
+        </span>
+        <span>Built by AkBuilts</span>
+      </footer>
     </div>
   );
 }

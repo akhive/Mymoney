@@ -1,85 +1,130 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { RecoveryRedirect } from "@/components/auth/recovery-redirect";
-import { Wallet, TrendingUp, Shield, Smartphone } from "lucide-react";
+import {
+  ArrowRight,
+  ChartNoAxesCombined,
+  Globe2,
+  ShieldCheck,
+  Wallet,
+} from "lucide-react";
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100">
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-slate-950 text-slate-100 selection:bg-indigo-500 selection:text-white">
       <RecoveryRedirect />
-      {/* Header */}
-      <header className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2 font-bold text-xl">
-            <Wallet className="h-6 w-6 text-primary" />
-            <span>My Money</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" asChild>
-              <Link href="/login">Log in</Link>
-            </Button>
-          </div>
-        </div>
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 opacity-[0.08] [background-image:radial-gradient(#94a3b8_0.7px,transparent_0.7px)] [background-size:24px_24px]"
+      />
+
+      <header className="relative z-10 mx-auto flex h-16 w-full max-w-7xl shrink-0 items-center justify-between border-b border-slate-800/80 px-5 sm:px-8">
+        <Link href="/" className="group flex items-center gap-2.5">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-lg shadow-indigo-950/60 transition-transform group-hover:scale-105">
+            <Wallet className="h-4 w-4" aria-hidden="true" />
+          </span>
+          <span className="text-lg font-bold text-white">My Money</span>
+        </Link>
+        <nav aria-label="Account" className="flex items-center gap-2">
+          <Link
+            href="/login"
+            className="rounded-md px-3 py-2 text-xs font-semibold text-slate-300 transition-colors hover:text-white"
+          >
+            Sign in
+          </Link>
+          <Link
+            href="/login"
+            className="rounded-md bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-md shadow-indigo-950/50 transition-colors hover:bg-indigo-500"
+          >
+            Get started
+          </Link>
+        </nav>
       </header>
 
-      {/* Hero */}
-      <main className="container mx-auto px-4 py-16 md:py-24">
-        <div className="max-w-3xl mx-auto text-center space-y-8">
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-slate-900">
-            Take control of your{" "}
-            <span className="text-primary">money</span>
-          </h1>
-          <p className="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto">
-            A simple, private finance tracker. Track income & expenses, manage
-            accounts, and see where your money goes — all in one place.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" variant="outline" asChild>
-              <Link href="/login">I already have an account</Link>
-            </Button>
-            <p className="flex items-center justify-center text-sm text-slate-600">
-              New accounts are created by a Super User.
-            </p>
+      <main className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-5 py-10 sm:px-8 sm:py-14">
+        <section className="mx-auto w-full text-center">
+          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-indigo-400/20 bg-indigo-400/10 px-3.5 py-1.5 text-xs font-medium text-indigo-300">
+            <span className="h-2 w-2 rounded-full bg-emerald-400" />
+            Multi-currency &amp; real-time tracking
           </div>
-        </div>
 
-        {/* Features */}
-        <div className="mt-24 grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          <div className="bg-white rounded-2xl p-6 shadow-sm border text-center space-y-3">
-            <div className="mx-auto w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-              <TrendingUp className="h-6 w-6 text-blue-600" />
-            </div>
-            <h3 className="font-semibold text-lg">Track everything</h3>
-            <p className="text-slate-600 text-sm">
-              Income, expenses, multiple accounts and categories. See your full
-              picture at a glance.
-            </p>
+          <h1 className="mx-auto max-w-3xl text-3xl font-extrabold leading-tight text-white sm:text-5xl lg:text-6xl">
+            Master your money with total{" "}
+            <span className="bg-gradient-to-r from-indigo-300 via-cyan-200 to-emerald-300 bg-clip-text text-transparent">
+              clarity
+            </span>
+          </h1>
+          <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-slate-400 sm:text-base">
+            Track income, monitor multi-currency accounts, build smart budgets,
+            and understand your financial progress in one place.
+          </p>
+
+          <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Link
+              href="/login"
+              className="group inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-950/60 transition-colors hover:bg-indigo-500"
+            >
+              Get started
+              <ArrowRight
+                className="h-4 w-4 transition-transform group-hover:translate-x-1"
+                aria-hidden="true"
+              />
+            </Link>
+            <Link
+              href="/login"
+              className="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-700 bg-slate-900 px-6 py-3 text-sm font-semibold text-slate-300 transition-colors hover:border-slate-600 hover:bg-slate-800 hover:text-white"
+            >
+              Log in
+            </Link>
           </div>
-          <div className="bg-white rounded-2xl p-6 shadow-sm border text-center space-y-3">
-            <div className="mx-auto w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
-              <Shield className="h-6 w-6 text-green-600" />
-            </div>
-            <h3 className="font-semibold text-lg">Your data stays private</h3>
-            <p className="text-slate-600 text-sm">
-              Each user only sees their own data. Secured with Row Level
-              Security on Supabase.
-            </p>
+
+          <div className="mt-10 grid w-full grid-cols-1 gap-3 text-left md:grid-cols-3">
+            <article className="flex items-start gap-4 rounded-lg border border-slate-800 bg-slate-900/80 p-5">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-indigo-400/20 bg-indigo-400/10 text-indigo-300">
+                <ChartNoAxesCombined className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <div>
+                <h2 className="text-sm font-bold text-white">Smart analytics</h2>
+                <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                  Visual spending breakdowns and clear income-to-expense comparisons.
+                </p>
+              </div>
+            </article>
+
+            <article className="flex items-start gap-4 rounded-lg border border-slate-800 bg-slate-900/80 p-5">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-emerald-400/20 bg-emerald-400/10 text-emerald-300">
+                <ShieldCheck className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <div>
+                <h2 className="text-sm font-bold text-white">Private by design</h2>
+                <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                  Personal financial data protected with Supabase row-level security.
+                </p>
+              </div>
+            </article>
+
+            <article className="flex items-start gap-4 rounded-lg border border-slate-800 bg-slate-900/80 p-5">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-cyan-400/20 bg-cyan-400/10 text-cyan-300">
+                <Globe2 className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <div>
+                <h2 className="text-sm font-bold text-white">Multi-currency</h2>
+                <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                  Track accounts and budgets in AED, USD, EUR, INR, and more.
+                </p>
+              </div>
+            </article>
           </div>
-          <div className="bg-white rounded-2xl p-6 shadow-sm border text-center space-y-3">
-            <div className="mx-auto w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
-              <Smartphone className="h-6 w-6 text-purple-600" />
-            </div>
-            <h3 className="font-semibold text-lg">Works on any device</h3>
-            <p className="text-slate-600 text-sm">
-              Fully responsive. Use it on your phone, tablet or computer —
-              same account, same data.
-            </p>
-          </div>
-        </div>
+        </section>
       </main>
 
-      <footer className="border-t mt-24 py-8 text-center text-sm text-slate-500">
-        Built with Next.js + Supabase · Private & multi-user ready
+      <footer className="relative z-10 shrink-0 border-t border-slate-800/80 py-4">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-5 sm:px-8">
+          <span className="flex items-center gap-2 text-xs font-medium text-slate-400">
+            <Wallet className="h-3.5 w-3.5 text-indigo-300" aria-hidden="true" />
+            My Money
+          </span>
+          <span className="text-xs text-slate-500">Built by AkBuilts</span>
+        </div>
       </footer>
     </div>
   );
