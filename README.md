@@ -18,6 +18,8 @@ A multi-user personal finance tracker built with **Next.js 15** + **Supabase**.
 4. Go to Authentication → Providers → enable **Email**
 5. (Optional for testing) Authentication → Settings → turn **off** “Confirm email”
 
+For an existing project, run `supabase/migration_v3.sql` in the SQL Editor to add the profile insert policy required for saving preferences.
+
 ### 2. Setup the app
 
 ```bash
