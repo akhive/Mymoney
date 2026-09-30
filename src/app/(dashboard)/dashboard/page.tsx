@@ -18,6 +18,8 @@ import {
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
+type JoinedCategory = { name?: string } | { name?: string }[] | null;
+
 export default async function DashboardPage() {
   const supabase = await createClient();
 
@@ -130,9 +132,12 @@ export default async function DashboardPage() {
   const budgetRows =
     budgets?.map((b) => {
       const spent = catSpend[b.category_id] || 0;
+      const cat = b.category as JoinedCategory;
+      const categoryName = Array.isArray(cat) ? cat[0]?.name : cat?.name;
+
       return {
         id: b.id,
-        name: (b.category as { name?: string } | null)?.name || "Category",
+        name: categoryName || "Category",
         amount: Number(b.amount),
         spent,
       };
@@ -372,33 +377,38 @@ export default async function DashboardPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {recentTransactions.map((txn) => (
-                <div
-                  key={txn.id}
-                  className="flex items-center justify-between py-2 border-b last:border-0"
-                >
-                  <div>
-                    <p className="font-medium">
-                      {txn.description || "Untitled"}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {(txn.category as { name?: string } | null)?.name ??
-                        "Uncategorized"}{" "}
-                      · {formatDate(txn.date)}
-                    </p>
-                  </div>
-                  <span
-                    className={
-                      txn.type === "income"
-                        ? "font-semibold text-green-600"
-                        : "font-semibold text-red-600"
-                    }
+              {recentTransactions.map((txn) => {
+                const cat = txn.category as JoinedCategory;
+                const categoryName = Array.isArray(cat)
+                  ? cat[0]?.name
+                  : cat?.name;
+
+                return (
+                  <div
+                    key={txn.id}
+                    className="flex items-center justify-between py-2 border-b last:border-0"
                   >
-                    {txn.type === "income" ? "+" : "-"}
-                    {formatCurrency(Number(txn.amount), currency)}
-                  </span>
-                </div>
-              ))}
+                    <div>
+                      <p className="font-medium">
+                        {txn.description || "Untitled"}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {categoryName ?? "Uncategorized"} · {formatDate(txn.date)}
+                      </p>
+                    </div>
+                    <span
+                      className={
+                        txn.type === "income"
+                          ? "font-semibold text-green-600"
+                          : "font-semibold text-red-600"
+                      }
+                    >
+                      {txn.type === "income" ? "+" : "-"}
+                      {formatCurrency(Number(txn.amount), currency)}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           )}
         </CardContent>
