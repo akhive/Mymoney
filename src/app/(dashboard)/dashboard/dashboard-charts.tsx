@@ -6,6 +6,8 @@ import {
   Cell,
   ResponsiveContainer,
   Tooltip,
+  Legend,
+  Label,
   BarChart,
   Bar,
   XAxis,
@@ -28,28 +30,45 @@ interface TopCategory {
   color: string;
 }
 
-interface DashboardChartsProps {
-  topCategories: TopCategory[];
+interface CashflowPoint {
+  key: string;
+  name: string;
   income: number;
   expense: number;
+}
+
+interface DashboardChartsProps {
+  topCategories: TopCategory[];
+  cashflowData: CashflowPoint[];
   currency: string;
 }
 
 export function DashboardCharts({
   topCategories,
-  income,
-  expense,
+  cashflowData,
   currency,
 }: DashboardChartsProps) {
-  const barData = [
-    { name: "Income", amount: income, fill: "#10b981" },
-    { name: "Expense", amount: expense, fill: "#f43f5e" },
-  ];
+  const pieCategories = topCategories.slice(0, 4);
+  const otherAmount = topCategories
+    .slice(4)
+    .reduce((sum, category) => sum + category.amount, 0);
+  if (otherAmount > 0) {
+    pieCategories.push({
+      id: "other",
+      name: "Other",
+      amount: otherAmount,
+      color: "#64748b",
+    });
+  }
+  const categorizedTotal = topCategories.reduce(
+    (sum, category) => sum + category.amount,
+    0
+  );
 
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       {/* Cashflow Bar Chart */}
-      <Card className="order-1 flex flex-col border-slate-200 bg-white shadow-sm transition-colors duration-200 dark:col-span-2 dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none lg:col-span-2">
+      <Card className="order-1 flex flex-col border-slate-200 bg-white shadow-sm transition-colors duration-200 dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none lg:col-span-2">
         <CardHeader>
           <CardTitle className="text-xs font-bold text-slate-900 dark:text-white">
             Cash Flow Overview
@@ -59,9 +78,9 @@ export function DashboardCharts({
           </CardDescription>
         </CardHeader>
         <CardContent className="flex-1 pb-4">
-          <div className="h-[250px] w-full">
+          <div className="h-[280px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={barData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+              <BarChart data={cashflowData} margin={{ top: 8, right: 12, left: 4, bottom: 2 }}>
                 <CartesianGrid
                   stroke="hsl(var(--border))"
                   strokeDasharray="3 3"
@@ -88,12 +107,35 @@ export function DashboardCharts({
                     borderRadius: "8px",
                     color: "hsl(var(--popover-foreground))",
                   }}
-                  formatter={(value: number) => [
+                  formatter={(value: number, name: string) => [
                     formatCurrency(value, currency),
-                    "Total",
+                    name,
                   ]}
+                  labelStyle={{ color: "hsl(var(--popover-foreground))" }}
                 />
-                <Bar dataKey="amount" radius={[4, 4, 0, 0]} />
+                <Legend
+                  verticalAlign="top"
+                  align="right"
+                  iconType="circle"
+                  wrapperStyle={{
+                    color: "hsl(var(--muted-foreground))",
+                    fontSize: 11,
+                  }}
+                />
+                <Bar
+                  dataKey="income"
+                  name="Income"
+                  fill="#10b981"
+                  radius={[4, 4, 0, 0]}
+                  maxBarSize={28}
+                />
+                <Bar
+                  dataKey="expense"
+                  name="Expenses"
+                  fill="#f43f5e"
+                  radius={[4, 4, 0, 0]}
+                  maxBarSize={28}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -111,41 +153,68 @@ export function DashboardCharts({
           </CardDescription>
         </CardHeader>
         <CardContent className="flex-1 pb-4">
-          {topCategories.length === 0 ? (
+          {pieCategories.length === 0 ? (
             <div className="flex h-[250px] items-center justify-center text-sm text-slate-500 dark:text-slate-400">
               No expense data to display
             </div>
           ) : (
-            <div className="h-[250px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={topCategories}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={90}
-                    paddingAngle={4}
-                    dataKey="amount"
-                  >
-                    {topCategories.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--popover))",
-                      border: "1px solid hsl(var(--border))",
-                      borderRadius: "8px",
-                      color: "hsl(var(--popover-foreground))",
-                    }}
-                    formatter={(value: number) => [
-                      formatCurrency(value, currency),
-                      "Amount",
-                    ]}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+            <div className="flex h-[280px] flex-col">
+              <div className="min-h-0 flex-1">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={pieCategories}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={52}
+                      outerRadius={78}
+                      paddingAngle={3}
+                      dataKey="amount"
+                      stroke="hsl(var(--card))"
+                      strokeWidth={3}
+                    >
+                      {pieCategories.map((entry) => (
+                        <Cell key={entry.id} fill={entry.color} />
+                      ))}
+                      <Label
+                        value={formatCurrency(categorizedTotal, currency)}
+                        position="center"
+                        fill="hsl(var(--foreground))"
+                        fontSize={12}
+                        fontWeight={600}
+                      />
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--popover))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                        color: "hsl(var(--popover-foreground))",
+                      }}
+                      formatter={(value: number) => [
+                        formatCurrency(value, currency),
+                        "Amount",
+                      ]}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 border-t border-slate-200 pt-2 dark:border-slate-800">
+                {pieCategories.map((category) => (
+                  <div key={category.id} className="flex min-w-0 items-center gap-1.5 text-[10px]">
+                    <span
+                      className="h-2 w-2 shrink-0 rounded-full"
+                      style={{ backgroundColor: category.color }}
+                    />
+                    <span className="min-w-0 flex-1 truncate text-slate-500 dark:text-slate-400">
+                      {category.name}
+                    </span>
+                    <span className="shrink-0 font-medium text-slate-700 dark:text-slate-200">
+                      {formatCurrency(category.amount, currency)}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </CardContent>

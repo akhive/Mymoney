@@ -27,7 +27,19 @@ const navItems = [
   { href: "/users", label: "User management", icon: Users, superUserOnly: true },
 ];
 
-export function Sidebar({ isSuperUser }: { isSuperUser: boolean }) {
+interface SidebarProps {
+  isSuperUser: boolean;
+  displayName: string;
+  initials: string;
+  preferredCurrency: string;
+}
+
+export function Sidebar({
+  isSuperUser,
+  displayName,
+  initials,
+  preferredCurrency,
+}: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
@@ -72,6 +84,19 @@ export function Sidebar({ isSuperUser }: { isSuperUser: boolean }) {
         </nav>
 
         <div className="border-t border-slate-200 p-3 dark:border-slate-800/80">
+          <div className="mb-3 flex min-w-0 items-center gap-2.5 px-2">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-indigo-200 bg-indigo-100 text-xs font-bold text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/20 dark:text-indigo-300">
+              {initials}
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-xs font-bold leading-none text-slate-900 dark:text-white">
+                {displayName}
+              </p>
+              <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">
+                {preferredCurrency} Preferred
+              </p>
+            </div>
+          </div>
           <Button
             variant="ghost"
             className="w-full justify-start gap-3 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"

@@ -71,6 +71,38 @@ export default async function DashboardPage() {
     .limit(8);
 
   const now = new Date();
+  const chartStart = new Date(now.getFullYear(), now.getMonth() - 4, 1);
+  const chartStartDate = chartStart.toISOString().split("T")[0];
+  const chartEndDate = now.toISOString().split("T")[0];
+  const { data: chartTransactions } = await supabase
+    .from("transactions")
+    .select("date, type, amount")
+    .eq("user_id", user.id)
+    .gte("date", chartStartDate)
+    .lte("date", chartEndDate);
+
+  const cashflowData = Array.from({ length: 5 }, (_, index) => {
+    const monthStart = new Date(now.getFullYear(), now.getMonth() - 4 + index, 1);
+    return {
+      key: `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, "0")}`,
+      name: monthStart.toLocaleString("default", { month: "short" }),
+      income: 0,
+      expense: 0,
+    };
+  });
+
+  chartTransactions?.forEach((transaction) => {
+    const month = cashflowData.find(
+      (item) => item.key === transaction.date.slice(0, 7)
+    );
+    if (!month) return;
+    if (transaction.type === "income") {
+      month.income += Number(transaction.amount);
+    } else if (transaction.type === "expense") {
+      month.expense += Number(transaction.amount);
+    }
+  });
+
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
     .toISOString()
     .split("T")[0];
@@ -218,7 +250,7 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="mt-1 text-xl font-extrabold text-emerald-600 dark:text-emerald-400">
-              {formatCurrency(income, preferredCurrency)}
+              +{formatCurrency(income, preferredCurrency)}
             </div>
             <p className="text-[10px] text-slate-500 dark:text-slate-400">
               {now.toLocaleString("default", { month: "long" })}
@@ -237,7 +269,7 @@ export default async function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="mt-1 text-xl font-extrabold text-rose-600 dark:text-rose-400">
-              {formatCurrency(expense, preferredCurrency)}
+              −{formatCurrency(expense, preferredCurrency)}
             </div>
             <p className="text-[10px] text-slate-500 dark:text-slate-400">
               {lastExpense > 0
@@ -272,8 +304,7 @@ export default async function DashboardPage() {
       {/* Interactive Pie & Bar Charts */}
       <DashboardCharts
         topCategories={topCategories}
-        income={income}
-        expense={expense}
+        cashflowData={cashflowData}
         currency={preferredCurrency}
       />
 
