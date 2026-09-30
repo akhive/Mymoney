@@ -52,8 +52,9 @@ export default function AccountsPage() {
 
   const loadAccounts = useCallback(async () => {
     const {
-      data: { user },
-    } = await supabase.auth.getUser();
+      data: { session },
+    } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) return;
 
     const [{ data }, { data: profile }] = await Promise.all([

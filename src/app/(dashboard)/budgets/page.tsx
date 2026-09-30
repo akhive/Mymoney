@@ -38,8 +38,9 @@ export default function BudgetsPage() {
 
   const load = useCallback(async () => {
     const {
-      data: { user },
-    } = await supabase.auth.getUser();
+      data: { session },
+    } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) return;
 
     const start = `${year}-${String(month).padStart(2, "0")}-01`;

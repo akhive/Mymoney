@@ -25,8 +25,9 @@ export default function SettingsPage() {
 
   const load = useCallback(async () => {
     const {
-      data: { user },
-    } = await supabase.auth.getUser();
+      data: { session },
+    } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) return;
 
     setEmail(user.email || "");

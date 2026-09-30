@@ -30,11 +30,11 @@ type JoinedCategory = { name?: string } | { name?: string }[] | null;
 export default async function DashboardPage() {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const claims = claimsData?.claims;
+  const userId = claims?.sub;
 
-  if (!user) {
+  if (!userId) {
     redirect("/login");
   }
 
@@ -42,19 +42,20 @@ export default async function DashboardPage() {
   const { data: profile } = await supabase
     .from("profiles")
     .select("preferred_currency, full_name")
-    .eq("id", user.id)
+    .eq("id", userId)
     .maybeSingle();
 
   // Primary currency fallback
   const preferredCurrency = profile?.preferred_currency || "USD";
   const displayName =
-    profile?.full_name || user.user_metadata?.full_name || "";
+    profile?.full_name ||
+    (typeof claims?.email === "string" ? claims.email.split("@")[0] : "");
 
   // Fetch active accounts
   const { data: accounts } = await supabase
     .from("accounts")
     .select("id, name, balance, color")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .eq("is_archived", false);
 
   const totalBalance =
@@ -66,7 +67,7 @@ export default async function DashboardPage() {
     .select(
       "id, type, amount, description, date, account:accounts(name), category:categories(name)"
     )
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .order("date", { ascending: false })
     .limit(8);
 
@@ -77,7 +78,7 @@ export default async function DashboardPage() {
   const { data: chartTransactions } = await supabase
     .from("transactions")
     .select("date, type, amount")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .gte("date", chartStartDate)
     .lte("date", chartEndDate);
 
@@ -115,14 +116,14 @@ export default async function DashboardPage() {
   const { data: monthTxns } = await supabase
     .from("transactions")
     .select("type, amount, category_id")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .gte("date", startOfMonth);
 
   // Fetch last month transactions
   const { data: lastMonthTxns } = await supabase
     .from("transactions")
     .select("type, amount")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .gte("date", startOfLastMonth)
     .lt("date", endOfLastMonth);
 
@@ -153,7 +154,7 @@ export default async function DashboardPage() {
   const { data: cats } = await supabase
     .from("categories")
     .select("id, name, color")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .eq("type", "expense");
 
   const topCategories = Object.entries(catSpend)
@@ -171,7 +172,7 @@ export default async function DashboardPage() {
   const { data: budgets } = await supabase
     .from("budgets")
     .select("id, amount, category_id, category:categories(name)")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .eq("month", now.getMonth() + 1)
     .eq("year", now.getFullYear());
 

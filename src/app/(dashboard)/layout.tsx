@@ -9,21 +9,20 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: profile } = user
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const claims = claimsData?.claims;
+  const userId = claims?.sub;
+  const { data: profile } = userId
     ? await supabase
         .from("profiles")
         .select("role, full_name, preferred_currency")
-        .eq("id", user.id)
+        .eq("id", userId)
         .maybeSingle()
     : { data: null };
   const isSuperUser = profile?.role === "super_user";
   const displayName: string =
     profile?.full_name ||
-    user?.user_metadata?.full_name ||
-    user?.email?.split("@")[0] ||
+    (typeof claims?.email === "string" ? claims.email.split("@")[0] : "") ||
     "Account";
   const initials = displayName
     .split(/\s+/)

@@ -173,10 +173,10 @@ export function UserManagement() {
         </p>
       )}
 
-      <div className="overflow-x-auto rounded-lg border bg-white shadow-sm">
+      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white text-slate-900 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100">
         <table className="w-full min-w-[760px] border-collapse text-left text-sm">
           <thead>
-            <tr className="border-b bg-slate-50 text-xs font-medium uppercase text-slate-500">
+            <tr className="border-b bg-slate-50 text-xs font-medium uppercase text-slate-500 dark:bg-slate-800 dark:text-slate-300">
               <th className="px-4 py-3">Username</th>
               <th className="px-4 py-3">Display name</th>
               <th className="px-4 py-3">Job role</th>
@@ -200,11 +200,11 @@ export function UserManagement() {
               </tr>
             ) : (
               users.map((user) => (
-                <tr key={user.id} className="hover:bg-slate-50">
+                <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/70">
                   <td className="px-4 py-3 font-mono text-xs">{user.email}</td>
                   <td className="px-4 py-3 font-medium">{user.full_name}</td>
-                  <td className="px-4 py-3 text-slate-600">{user.job_title || "—"}</td>
-                  <td className="px-4 py-3 text-slate-500">Set</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{user.job_title || "—"}</td>
+                  <td className="px-4 py-3 text-slate-500 dark:text-slate-400">Set</td>
                   <td className="px-4 py-3">
                     <span
                       className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${

@@ -13,6 +13,7 @@ import {
   Tags,
   LogOut,
   PieChart,
+  BarChart3,
   Settings,
   Users,
 } from "lucide-react";
@@ -23,6 +24,7 @@ const navItems = [
   { href: "/accounts", label: "Accounts", icon: CreditCard },
   { href: "/categories", label: "Categories", icon: Tags },
   { href: "/budgets", label: "Budgets", icon: PieChart },
+  { href: "/reports", label: "Reports", icon: BarChart3 },
   { href: "/settings", label: "Settings", icon: Settings },
   { href: "/users", label: "User management", icon: Users, superUserOnly: true },
 ];

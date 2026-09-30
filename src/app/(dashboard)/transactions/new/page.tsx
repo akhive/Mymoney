@@ -35,8 +35,9 @@ export default function NewTransactionPage() {
   useEffect(() => {
     async function load() {
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
+        data: { session },
+      } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) return;
 
       const [accRes, catRes] = await Promise.all([
