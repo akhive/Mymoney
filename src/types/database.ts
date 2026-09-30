@@ -1,4 +1,5 @@
-export type TransactionType = "income" | "expense";
+export type TransactionType = "income" | "expense" | "transfer";
+export type CategoryType = Exclude<TransactionType, "transfer">;
 export type UserRole = "super_user" | "admin" | "user";
 
 export interface Profile {
@@ -30,7 +31,7 @@ export interface Category {
   id: string;
   user_id: string;
   name: string;
-  type: TransactionType;
+  type: CategoryType;
   icon: string;
   color: string;
   created_at: string;
@@ -43,6 +44,8 @@ export interface Transaction {
   category_id: string | null;
   type: TransactionType;
   amount: number;
+  to_account_id: string | null;
+  to_amount: number | null;
   description: string | null;
   date: string;
   created_at: string;

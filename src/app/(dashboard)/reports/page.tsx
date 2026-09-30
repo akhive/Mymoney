@@ -31,6 +31,7 @@ export default async function ReportsPage() {
       .from("transactions")
       .select("date, type, amount, id")
       .eq("user_id", userId)
+      .in("type", ["income", "expense"])
       .order("date", { ascending: true })
       .order("id", { ascending: true })
       .range(offset, offset + pageSize - 1);

@@ -12,7 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { Category, TransactionType } from "@/types/database";
+import type { Category, CategoryType } from "@/types/database";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 
 const COLORS = [
@@ -35,7 +35,7 @@ export default function CategoriesPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [name, setName] = useState("");
-  const [type, setType] = useState<TransactionType>("expense");
+  const [type, setType] = useState<CategoryType>("expense");
   const [color, setColor] = useState(COLORS[0]);
 
   const loadCategories = useCallback(async () => {

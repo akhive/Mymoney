@@ -21,8 +21,8 @@ import { DashboardCharts } from "./dashboard-charts";
 import { DashboardThemeToggle } from "@/components/layout/dashboard-theme";
 
 type JoinedAccount =
-  | { name?: string }
-  | { name?: string }[]
+  | { name?: string; currency?: string }
+  | { name?: string; currency?: string }[]
   | null;
 
 type JoinedCategory = { name?: string } | { name?: string }[] | null;
@@ -65,13 +65,13 @@ export default async function DashboardPage() {
       .maybeSingle(),
     supabase
       .from("accounts")
-      .select("id, name, balance, color")
+      .select("id, name, balance, color, currency")
       .eq("user_id", userId)
       .eq("is_archived", false),
     supabase
       .from("transactions")
       .select(
-        "id, type, amount, description, date, account:accounts(name), category:categories(name)"
+        "id, type, amount, to_amount, description, date, account:accounts!transactions_account_id_fkey(name, currency), destination:accounts!transactions_to_account_id_fkey(name, currency), category:categories(name)"
       )
       .eq("user_id", userId)
       .order("date", { ascending: false })
@@ -100,8 +100,13 @@ export default async function DashboardPage() {
     profile?.full_name ||
     (typeof claims?.email === "string" ? claims.email.split("@")[0] : "");
 
-  const totalBalance =
-    accounts?.reduce((sum, a) => sum + Number(a.balance), 0) ?? 0;
+  const balancesByCurrency = Object.entries(
+    (accounts ?? []).reduce<Record<string, number>>((balances, account) => {
+      const currency = account.currency || preferredCurrency;
+      balances[currency] = (balances[currency] || 0) + Number(account.balance);
+      return balances;
+    }, {})
+  );
 
   const cashflowData = Array.from({ length: 5 }, (_, index) => {
     const monthStart = new Date(now.getFullYear(), now.getMonth() - 4 + index, 1);
@@ -222,14 +227,20 @@ export default async function DashboardPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="border-slate-200 bg-white shadow-sm transition-colors duration-200 dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs font-medium text-slate-500 dark:text-slate-400">Total Balance</CardTitle>
+            <CardTitle className="text-xs font-medium text-slate-500 dark:text-slate-400">Balances by currency</CardTitle>
             <span className="rounded-md border border-indigo-200 bg-indigo-50 p-2 text-indigo-600 dark:border-indigo-500/20 dark:bg-indigo-500/10 dark:text-indigo-400">
               <Wallet className="h-4 w-4" />
             </span>
           </CardHeader>
           <CardContent>
-            <div className="mt-1 text-xl font-extrabold text-slate-900 dark:text-white">
-              {formatCurrency(totalBalance, preferredCurrency)}
+            <div className="mt-1 space-y-0.5 text-lg font-extrabold text-slate-900 dark:text-white">
+              {balancesByCurrency.length === 0
+                ? formatCurrency(0, preferredCurrency)
+                : balancesByCurrency.map(([currency, balance]) => (
+                    <div key={currency}>
+                      {formatCurrency(balance, currency)}
+                    </div>
+                  ))}
             </div>
             <p className="text-[10px] text-slate-500 dark:text-slate-400">
               {accounts?.length || 0} active account
@@ -455,9 +466,19 @@ export default async function DashboardPage() {
             <div className="space-y-3">
               {recentTransactions.map((txn) => {
                 const acc = txn.account as JoinedAccount;
+                const destination = txn.destination as JoinedAccount;
                 const cat = txn.category as JoinedCategory;
 
                 const accountName = Array.isArray(acc) ? acc[0]?.name : acc?.name;
+                const accountCurrency = Array.isArray(acc)
+                  ? acc[0]?.currency
+                  : acc?.currency;
+                const destinationName = Array.isArray(destination)
+                  ? destination[0]?.name
+                  : destination?.name;
+                const destinationCurrency = Array.isArray(destination)
+                  ? destination[0]?.currency
+                  : destination?.currency;
                 const categoryName = Array.isArray(cat)
                   ? cat[0]?.name
                   : cat?.name;
@@ -468,24 +489,41 @@ export default async function DashboardPage() {
                     className="flex items-center justify-between py-2 border-b last:border-0"
                   >
                     <div>
-                      <p className="font-medium text-sm">
-                        {txn.description || "Untitled"}
-                      </p>
+                        <p className="font-medium text-sm">
+                          {txn.description ||
+                            (txn.type === "transfer" ? "Account transfer" : "Untitled")}
+                        </p>
                       <p className="text-xs text-muted-foreground">
-                        {accountName ? `${accountName} · ` : ""}
-                        {categoryName ?? "Uncategorized"} · {formatDate(txn.date)}
+                          {txn.type === "transfer"
+                            ? `${accountName ?? "Account"} → ${destinationName ?? "Account"} · Transfer · ${formatDate(txn.date)}`
+                            : `${accountName ? `${accountName} · ` : ""}${categoryName ?? "Uncategorized"} · ${formatDate(txn.date)}`}
                       </p>
                     </div>
-                    <span
-                      className={
-                        txn.type === "income"
-                          ? "font-semibold text-emerald-600 dark:text-emerald-400"
-                          : "font-semibold text-rose-600 dark:text-rose-400"
-                      }
-                    >
-                      {txn.type === "income" ? "+" : "-"}
-                      {formatCurrency(Number(txn.amount), preferredCurrency)}
-                    </span>
+                    <div className="shrink-0 text-right text-sm font-semibold">
+                      <div
+                        className={
+                          txn.type === "income"
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : txn.type === "transfer"
+                              ? "text-slate-700 dark:text-slate-200"
+                              : "text-rose-600 dark:text-rose-400"
+                        }
+                      >
+                        {txn.type === "income" ? "+" : "-"}
+                        {formatCurrency(
+                          Number(txn.amount),
+                          accountCurrency || preferredCurrency
+                        )}
+                      </div>
+                      {txn.type === "transfer" && (
+                        <div className="text-emerald-600 dark:text-emerald-400">
+                          +{formatCurrency(
+                            Number(txn.to_amount),
+                            destinationCurrency || preferredCurrency
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 );
               })}
