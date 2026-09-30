@@ -1,41 +1,41 @@
-import { type ClassValue, clsx } from "clsx";
+import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export const CURRENCIES = [
-  { code: "USD", label: "US Dollar ($)", symbol: "$" },
-  { code: "EUR", label: "Euro (€)", symbol: "€" },
-  { code: "GBP", label: "British Pound (£)", symbol: "£" },
-  { code: "INR", label: "Indian Rupee (₹)", symbol: "₹" },
-  { code: "AED", label: "UAE Dirham (د.إ)", symbol: "د.إ" },
-  { code: "SAR", label: "Saudi Riyal (﷼)", symbol: "﷼" },
-  { code: "PKR", label: "Pakistani Rupee (Rs)", symbol: "Rs" },
-  { code: "BDT", label: "Bangladeshi Taka (৳)", symbol: "৳" },
-  { code: "CAD", label: "Canadian Dollar (C$)", symbol: "C$" },
-  { code: "AUD", label: "Australian Dollar (A$)", symbol: "A$" },
-  { code: "JPY", label: "Japanese Yen (¥)", symbol: "¥" },
-  { code: "CNY", label: "Chinese Yuan (¥)", symbol: "¥" },
-] as const;
-
-export function formatCurrency(amount: number, currency = "USD") {
+export function formatCurrency(amount: number, currencyCode = "USD"): string {
   try {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency,
+      currency: currencyCode,
       maximumFractionDigits: 2,
     }).format(amount);
   } catch {
-    return `${currency} ${amount.toFixed(2)}`;
+    return `${currencyCode} ${amount.toFixed(2)}`;
   }
 }
 
-export function formatDate(date: string | Date) {
-  return new Intl.DateTimeFormat("en-US", {
-    year: "numeric",
+export function formatDate(dateString: string): string {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  return date.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
-  }).format(new Date(date));
+    year: "numeric",
+  });
 }
+
+export const CURRENCIES = [
+  { code: "USD", label: "USD ($)" },
+  { code: "AED", label: "AED (AED)" },
+  { code: "INR", label: "INR (₹)" },
+  { code: "GBP", label: "GBP (£)" },
+  { code: "EUR", label: "EUR (€)" },
+  { code: "SAR", label: "SAR (SAR)" },
+  { code: "QAR", label: "QAR (QAR)" },
+  { code: "OMR", label: "OMR (OMR)" },
+  { code: "KWD", label: "KWD (KWD)" },
+  { code: "BHD", label: "BHD (BHD)" },
+];
