@@ -71,7 +71,7 @@ export default async function DashboardPage() {
     supabase
       .from("transactions")
       .select(
-        "id, type, amount, to_amount, description, date, account:accounts!transactions_account_id_fkey(name, currency), destination:accounts!transactions_to_account_id_fkey(name, currency), category:categories(name)"
+        "id, type, amount, to_amount, description, date, account:accounts!transactions_account_id_fkey(name, currency), destination:accounts!transactions_to_account_id_fkey(name, currency), catego[...]
       )
       .eq("user_id", userId)
       .order("date", { ascending: false })
@@ -198,7 +198,7 @@ export default async function DashboardPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700 dark:border-indigo-500/20 dark:bg-indigo-500/10 dark:text-indigo-300">
+          <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700 dark:border-indigo-500/20 dark:bg-in[...]
             <span className="h-2 w-2 animate-pulse rounded-full bg-indigo-500 dark:bg-indigo-400" />
             Live overview
           </div>
@@ -350,7 +350,7 @@ export default async function DashboardPage() {
                       </span>
                     </div>
                     <span className="text-sm font-semibold whitespace-nowrap">
-                      {formatCurrency(Number(a.balance), preferredCurrency)}
+                      {formatCurrency(Number(a.balance), a.currency || preferredCurrency)}
                     </span>
                   </div>
                 ))}
