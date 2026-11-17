@@ -130,3 +130,19 @@ src/
 - Edit / delete transactions & accounts
 - Dark mode
 - Multi-currency support
+
+---
+
+## iPhone tap-to-pay (Apple Pay) expense popup
+
+Every time you pay with Apple Pay, an iOS Shortcuts automation can open My Money with a popup that asks you to record the payment as an expense (amount, merchant and card are prefilled).
+
+Requires iOS 17+. Full step-by-step instructions (with a copyable link) are in the app under **Settings → iPhone tap-to-pay**. In short:
+
+1. Shortcuts → Automation → **+** → **Transaction** → pick your cards → **Run Immediately**.
+2. Add a **URL** action:
+   `https://<your-domain>/transactions/new?source=tap&amount=[Amount]&merchant=[Merchant]&card=[Card or Pass]`
+   (the bracketed parts are Shortcut Input variables).
+3. Add **Open URLs**.
+
+The account is matched to the Wallet card name, and the category is reused from your last expense at the same merchant. If you aren't logged in, you'll be sent back to the popup after logging in.

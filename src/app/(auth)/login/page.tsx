@@ -42,7 +42,14 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/dashboard");
+    // Only allow same-site relative redirects.
+    const next = new URLSearchParams(window.location.search).get("next");
+    const destination =
+      next && next.startsWith("/") && !next.startsWith("//")
+        ? next
+        : "/dashboard";
+
+    router.push(destination);
     router.refresh();
   }
 

@@ -15,6 +15,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { Account, Category, TransactionType } from "@/types/database";
+import { CreditCard, X } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
+import {
+  matchAccount,
+  readTapPaymentParams,
+  type TapPaymentParams,
+} from "@/lib/tap-payment";
 
 export default function NewTransactionPage() {
   const router = useRouter();
@@ -33,6 +40,8 @@ export default function NewTransactionPage() {
   const [accountId, setAccountId] = useState("");
   const [toAccountId, setToAccountId] = useState("");
   const [categoryId, setCategoryId] = useState("");
+  const [tapPayment, setTapPayment] = useState<TapPaymentParams | null>(null);
+  const [showTapPrompt, setShowTapPrompt] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -62,6 +71,36 @@ export default function NewTransactionPage() {
         if (accRes.data.length > 1) setToAccountId(accRes.data[1].id);
       }
       if (catRes.data) setCategories(catRes.data);
+
+      // iPhone tap-to-pay: prefill from the Shortcuts automation link.
+      const tap = readTapPaymentParams(window.location.search);
+      if (tap) {
+        setTapPayment(tap);
+        setType("expense");
+        if (tap.amount) setAmount(tap.amount);
+        if (tap.merchant) setDescription(tap.merchant);
+
+        const matched = matchAccount(accRes.data ?? [], tap.card);
+        if (matched) setAccountId(matched.id);
+
+        // Reuse the category from the last expense at the same merchant.
+        if (tap.merchant) {
+          const { data: previous } = await supabase
+            .from("transactions")
+            .select("category_id")
+            .eq("user_id", user.id)
+            .eq("type", "expense")
+            .ilike("description", tap.merchant)
+            .not("category_id", "is", null)
+            .order("date", { ascending: false })
+            .limit(1);
+          if (previous?.[0]?.category_id) {
+            setCategoryId(previous[0].category_id);
+          }
+        }
+
+        setShowTapPrompt(true);
+      }
     }
     load();
   }, [supabase]);
@@ -74,6 +113,11 @@ export default function NewTransactionPage() {
   );
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    await saveTransaction();
+  }
+
+  async function saveTransaction() {
+    setShowTapPrompt(false);
     setLoading(true);
     setError(null);
 
@@ -159,8 +203,89 @@ export default function NewTransactionPage() {
     router.refresh();
   }
 
+  const tapCategory = categories.find((c) => c.id === categoryId);
+
   return (
     <div className="max-w-lg mx-auto">
+      {showTapPrompt && tapPayment && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 sm:items-center"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="tap-prompt-title"
+        >
+          <div className="w-full max-w-sm rounded-2xl bg-background p-5 shadow-xl">
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-indigo-600">
+                  <CreditCard className="h-5 w-5" />
+                </span>
+                <div>
+                  <h2 id="tap-prompt-title" className="font-semibold">
+                    Record this tap payment?
+                  </h2>
+                  <p className="text-xs text-muted-foreground">
+                    Detected from your iPhone Wallet
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                aria-label="Close"
+                className="text-muted-foreground hover:text-foreground"
+                onClick={() => setShowTapPrompt(false)}
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="mb-4 rounded-xl border p-4 text-center">
+              <div className="text-3xl font-bold">
+                {amount
+                  ? formatCurrency(
+                      Number(amount),
+                      sourceAccount?.currency || "USD"
+                    )
+                  : "Amount not detected"}
+              </div>
+              {tapPayment.merchant && (
+                <div className="mt-1 font-medium">{tapPayment.merchant}</div>
+              )}
+              <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+                <div>Account: {sourceAccount?.name || "—"}</div>
+                <div>Category: {tapCategory?.name || "Uncategorized"}</div>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Button
+                type="button"
+                className="w-full"
+                disabled={loading || !accountId || !amount}
+                onClick={() => saveTransaction()}
+              >
+                Record as expense
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => setShowTapPrompt(false)}
+              >
+                Edit details first
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full"
+                onClick={() => router.push("/transactions")}
+              >
+                Don&apos;t record
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
       <Card>
         <CardHeader>
           <CardTitle>Add transaction</CardTitle>
