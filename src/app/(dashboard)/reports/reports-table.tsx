@@ -1,12 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Download, Printer, Search } from "lucide-react";
-import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatCurrency } from "@/lib/utils";
+
+// Rows drawn on screen at a time. Totals, Excel export and printing always
+// use every matching row.
+const ROWS_PER_PAGE = 100;
 
 interface ReportTransaction {
   id: string;
@@ -86,6 +89,15 @@ export function ReportsView({
     dateTo: "",
     search: "",
   });
+  const [visibleCount, setVisibleCount] = useState(ROWS_PER_PAGE);
+  const [exporting, setExporting] = useState(false);
+
+  // Printing should include every row, not just the ones shown so far.
+  useEffect(() => {
+    const showAll = () => setVisibleCount(Number.POSITIVE_INFINITY);
+    window.addEventListener("beforeprint", showAll);
+    return () => window.removeEventListener("beforeprint", showAll);
+  }, []);
 
   const selectedAccount = accounts.find(
     (account) => account.id === appliedFilters.accountId
@@ -161,34 +173,50 @@ export function ReportsView({
     return `${appliedFilters.dateFrom || "all"}_to_${appliedFilters.dateTo || "time"}`;
   }
 
-  function exportToExcel() {
-    const rows = [
-      ["Report period", periodLabel],
-      ["Account", accountLabel],
-      ["Search", appliedFilters.search || "All transactions"],
-      [],
-      ["Date", "Description", "Category", "Account", "Amount"],
-      ...filteredTransactions.map((transaction) => [
-        transaction.date,
-        transaction.description || "",
-        transaction.category_name,
-        `${transaction.account_name} (${transaction.account_currency})`,
-        signedAmount(transaction),
-      ]),
-    ];
-    const worksheet = XLSX.utils.aoa_to_sheet(rows);
-    worksheet["!cols"] = [
-      { wch: 14 },
-      { wch: 32 },
-      { wch: 22 },
-      { wch: 28 },
-      { wch: 20 },
-    ];
-
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Transactions");
-    XLSX.writeFile(workbook, `Report_${filePeriod()}.xlsx`);
+  function printReport() {
+    setVisibleCount(Number.POSITIVE_INFINITY);
+    // Let React render the full table before the print dialog opens.
+    setTimeout(() => window.print(), 50);
   }
+
+  async function exportToExcel() {
+    setExporting(true);
+    try {
+      // The spreadsheet library is large, so only load it when exporting.
+      const XLSX = await import("xlsx");
+      const rows = [
+        ["Report period", periodLabel],
+        ["Account", accountLabel],
+        ["Search", appliedFilters.search || "All transactions"],
+        [],
+        ["Date", "Description", "Category", "Account", "Amount"],
+        ...filteredTransactions.map((transaction) => [
+          transaction.date,
+          transaction.description || "",
+          transaction.category_name,
+          `${transaction.account_name} (${transaction.account_currency})`,
+          signedAmount(transaction),
+        ]),
+      ];
+      const worksheet = XLSX.utils.aoa_to_sheet(rows);
+      worksheet["!cols"] = [
+        { wch: 14 },
+        { wch: 32 },
+        { wch: 22 },
+        { wch: 28 },
+        { wch: 20 },
+      ];
+
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Transactions");
+      XLSX.writeFile(workbook, `Report_${filePeriod()}.xlsx`);
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  const visibleTransactions = filteredTransactions.slice(0, visibleCount);
+  const hiddenCount = filteredTransactions.length - visibleTransactions.length;
 
   return (
     <section data-report-print className="space-y-5">
@@ -200,13 +228,13 @@ export function ReportsView({
           </p>
         </div>
         <div data-report-controls className="flex gap-2 print:hidden">
-          <Button type="button" variant="outline" onClick={() => window.print()}>
+          <Button type="button" variant="outline" onClick={printReport}>
             <Printer className="mr-2 h-4 w-4" />
             Print / PDF
           </Button>
-          <Button type="button" onClick={exportToExcel}>
+          <Button type="button" onClick={exportToExcel} disabled={exporting}>
             <Download className="mr-2 h-4 w-4" />
-            Excel
+            {exporting ? "Exporting…" : "Excel"}
           </Button>
         </div>
       </header>
@@ -291,9 +319,10 @@ export function ReportsView({
         <div className="flex justify-end sm:col-span-2 lg:col-span-4">
           <Button
             type="button"
-            onClick={() =>
-              setAppliedFilters({ accountId, dateFrom, dateTo, search })
-            }
+            onClick={() => {
+              setAppliedFilters({ accountId, dateFrom, dateTo, search });
+              setVisibleCount(ROWS_PER_PAGE);
+            }}
           >
             <Search className="mr-2 h-4 w-4" />
             Search
@@ -333,7 +362,7 @@ export function ReportsView({
                 </td>
               </tr>
             ) : (
-              filteredTransactions.map((transaction) => (
+              visibleTransactions.map((transaction) => (
                 <tr key={transaction.id} className="border-b last:border-0">
                   <td className="whitespace-nowrap px-3 py-2.5">{transaction.date}</td>
                   <td className="px-3 py-2.5">{transaction.description || "—"}</td>
@@ -366,6 +395,31 @@ export function ReportsView({
           </tfoot>
         </table>
       </div>
+
+      {hiddenCount > 0 && (
+        <div className="flex flex-col items-center gap-2 print:hidden">
+          <p className="text-xs text-muted-foreground">
+            Showing {visibleTransactions.length} of {filteredTransactions.length}.
+            Totals, print and Excel include all rows.
+          </p>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setVisibleCount((count) => count + ROWS_PER_PAGE)}
+            >
+              Show {Math.min(ROWS_PER_PAGE, hiddenCount)} more
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setVisibleCount(Number.POSITIVE_INFINITY)}
+            >
+              Show all
+            </Button>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
