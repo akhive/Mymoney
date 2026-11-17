@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { CURRENCIES } from "@/lib/utils";
+import { TapToPaySetup } from "@/components/settings/tap-to-pay-setup";
 
 export default function SettingsPage() {
   const supabase = createClient();
@@ -138,6 +139,7 @@ export default function SettingsPage() {
         </form>
       </Card>
 
+      <TapToPaySetup />
     </div>
   );
 }

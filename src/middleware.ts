@@ -55,13 +55,20 @@ export async function updateSession(request: NextRequest) {
   ) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/login";
+    // Remember where the user was going (e.g. a tap-to-pay link) so login
+    // can send them back with the prefilled transaction details.
+    redirectUrl.search = "";
+    redirectUrl.searchParams.set("next", path + request.nextUrl.search);
     return NextResponse.redirect(redirectUrl);
   }
 
   if (user && (path.startsWith("/login") || path.startsWith("/signup"))) {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/dashboard";
-    return NextResponse.redirect(redirectUrl);
+    const next = request.nextUrl.searchParams.get("next");
+    const safeNext =
+      next && next.startsWith("/") && !next.startsWith("//") ? next : null;
+    return NextResponse.redirect(
+      new URL(safeNext || "/dashboard", request.url)
+    );
   }
 
   return supabaseResponse;
