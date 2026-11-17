@@ -1,5 +1,9 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import {
+  getCurrentClaims,
+  getCurrentProfile,
+  getServerClient,
+} from "@/lib/supabase/server";
 import { ReportsView } from "./reports-table";
 
 interface ReportTransaction {
@@ -21,19 +25,15 @@ interface ReportAccount {
 }
 
 export default async function ReportsPage() {
-  const supabase = await createClient();
-  const { data: claimsData } = await supabase.auth.getClaims();
-  const claims = claimsData?.claims;
+  const claims = await getCurrentClaims();
   const userId = claims?.sub;
 
   if (!userId) redirect("/login");
 
-  const [{ data: profile }, { data: accountRows }] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("preferred_currency")
-      .eq("id", userId)
-      .maybeSingle(),
+  const supabase = await getServerClient();
+
+  const [profile, { data: accountRows }] = await Promise.all([
+    getCurrentProfile(userId),
     supabase
       .from("accounts")
       .select("id, name, currency")

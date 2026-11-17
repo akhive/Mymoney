@@ -1,24 +1,16 @@
 import { Sidebar } from "@/components/layout/sidebar";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { DashboardThemeInitializer } from "@/components/layout/dashboard-theme";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentClaims, getCurrentProfile } from "@/lib/supabase/server";
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const { data: claimsData } = await supabase.auth.getClaims();
-  const claims = claimsData?.claims;
+  const claims = await getCurrentClaims();
   const userId = claims?.sub;
-  const { data: profile } = userId
-    ? await supabase
-        .from("profiles")
-        .select("role, full_name, preferred_currency")
-        .eq("id", userId)
-        .maybeSingle()
-    : { data: null };
+  const profile = userId ? await getCurrentProfile(userId) : null;
   const isSuperUser = profile?.role === "super_user";
   const displayName: string =
     profile?.full_name ||

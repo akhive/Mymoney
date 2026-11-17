@@ -1,4 +1,8 @@
-import { createClient } from "@/lib/supabase/server";
+import {
+  getCurrentClaims,
+  getCurrentProfile,
+  getServerClient,
+} from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import {
   Card,
@@ -17,7 +21,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { DashboardCharts } from "./dashboard-charts";
+import { DashboardCharts } from "./dashboard-charts-lazy";
 import { DashboardThemeToggle } from "@/components/layout/dashboard-theme";
 
 type JoinedAccount =
@@ -28,15 +32,14 @@ type JoinedAccount =
 type JoinedCategory = { name?: string } | { name?: string }[] | null;
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
-
-  const { data: claimsData } = await supabase.auth.getClaims();
-  const claims = claimsData?.claims;
+  const claims = await getCurrentClaims();
   const userId = claims?.sub;
 
   if (!userId) {
     redirect("/login");
   }
+
+  const supabase = await getServerClient();
 
   const now = new Date();
   const chartStart = new Date(now.getFullYear(), now.getMonth() - 4, 1);
@@ -50,19 +53,18 @@ export default async function DashboardPage() {
     .split("T")[0];
   const endOfLastMonth = startOfMonth;
 
+  // Everything the dashboard needs, fetched in a single parallel round-trip.
+  // The last 5 months of transactions cover the chart, this month and last
+  // month, so one query replaces three.
   const [
-    { data: profile },
+    profile,
     { data: accounts },
     { data: recentTransactions },
-    { data: chartTransactions },
-    { data: monthTxns },
-    { data: lastMonthTxns },
+    { data: periodTransactions },
+    { data: cats },
+    { data: budgets },
   ] = await Promise.all([
-    supabase
-      .from("profiles")
-      .select("preferred_currency, full_name")
-      .eq("id", userId)
-      .maybeSingle(),
+    getCurrentProfile(userId),
     supabase
       .from("accounts")
       .select("id, name, balance, color, currency")
@@ -78,22 +80,30 @@ export default async function DashboardPage() {
       .limit(8),
     supabase
       .from("transactions")
-      .select("date, type, amount")
+      .select("date, type, amount, category_id")
       .eq("user_id", userId)
-      .gte("date", chartStartDate)
-      .lte("date", chartEndDate),
+      .in("type", ["income", "expense"])
+      .gte("date", chartStartDate),
     supabase
-      .from("transactions")
-      .select("type, amount, category_id")
+      .from("categories")
+      .select("id, name, color")
       .eq("user_id", userId)
-      .gte("date", startOfMonth),
+      .eq("type", "expense"),
     supabase
-      .from("transactions")
-      .select("type, amount")
+      .from("budgets")
+      .select("id, amount, category_id, category:categories(name)")
       .eq("user_id", userId)
-      .gte("date", startOfLastMonth)
-      .lt("date", endOfLastMonth),
+      .eq("month", now.getMonth() + 1)
+      .eq("year", now.getFullYear()),
   ]);
+
+  const chartTransactions = periodTransactions?.filter(
+    (t) => t.date <= chartEndDate
+  );
+  const monthTxns = periodTransactions?.filter((t) => t.date >= startOfMonth);
+  const lastMonthTxns = periodTransactions?.filter(
+    (t) => t.date >= startOfLastMonth && t.date < endOfLastMonth
+  );
 
   const preferredCurrency = profile?.preferred_currency || "USD";
   const displayName =
@@ -154,26 +164,13 @@ export default async function DashboardPage() {
         (catSpend[t.category_id!] || 0) + Number(t.amount);
     });
 
-  const [{ data: cats }, { data: budgets }] = await Promise.all([
-    supabase
-      .from("categories")
-      .select("id, name, color")
-      .eq("user_id", userId)
-      .eq("type", "expense"),
-    supabase
-      .from("budgets")
-      .select("id, amount, category_id, category:categories(name)")
-      .eq("user_id", userId)
-      .eq("month", now.getMonth() + 1)
-      .eq("year", now.getFullYear()),
-  ]);
-
+  const catsById = new Map((cats ?? []).map((c) => [c.id, c]));
   const topCategories = Object.entries(catSpend)
     .map(([id, amt]) => ({
       id,
       amount: amt,
-      name: cats?.find((c) => c.id === id)?.name || "Other",
-      color: cats?.find((c) => c.id === id)?.color || "#64748b",
+      name: catsById.get(id)?.name || "Other",
+      color: catsById.get(id)?.color || "#64748b",
     }))
     .sort((a, b) => b.amount - a.amount);
 
