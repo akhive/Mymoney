@@ -68,22 +68,24 @@ export function TapToPaySetup() {
           <p className="font-medium">2. Create the automation on your iPhone</p>
           <ol className="list-decimal space-y-1 pl-5 text-muted-foreground">
             <li>
-              Open the <b>Shortcuts</b> app → <b>Automation</b> → <b>+</b> →{" "}
+              Open the <b>Shortcuts</b> app and tap <b>Automation</b> at the
+              bottom.
+            </li>
+            <li>
+              Tap <b>+</b> (top right), scroll down and choose{" "}
               <b>Transaction</b>.
             </li>
             <li>
-              Select your Wallet cards, choose <b>Run Immediately</b>, tap{" "}
-              <b>Next</b> → <b>New Blank Automation</b>.
+              Tick your Wallet cards, choose <b>Run Immediately</b>, then tap{" "}
+              <b>Next</b>.
             </li>
             <li>
-              Add a <b>URL</b> action and paste the link. At the end, type{" "}
-              <code>&amp;amount=</code> and insert the variable{" "}
-              <b>Shortcut Input → Amount</b>, then <code>&amp;merchant=</code>{" "}
-              + <b>Merchant</b>, then <code>&amp;card=</code> +{" "}
-              <b>Card or Pass</b>.
+              Tap <b>New Blank Automation</b> → <b>Add Action</b>, search for{" "}
+              <b>Open URLs</b> and tap it.
             </li>
             <li>
-              Add an <b>Open URLs</b> action below it. Done.
+              Tap the blue <b>URL</b> word, paste the link from step 1, and tap{" "}
+              <b>Done</b>.
             </li>
           </ol>
         </div>
@@ -91,21 +93,27 @@ export function TapToPaySetup() {
         <div className="space-y-1">
           <p className="font-medium">3. Tap to pay</p>
           <p className="text-muted-foreground">
-            After each Apple Pay payment, My Money opens with a popup showing
-            the amount and merchant. Tap <b>Record as expense</b> to save it,
-            or <b>Edit details first</b>. The account is matched by the card
-            name (name your account like the Wallet card, e.g. &quot;HDFC
-            Credit Card&quot;), and the category is reused from your last
-            expense at the same merchant.
+            After each Apple Pay payment, My Money opens with a popup. Type the
+            amount and a note, pick the account and category, and tap{" "}
+            <b>Save expense</b>.
           </p>
         </div>
 
-        <p className="text-xs text-muted-foreground">
-          Tip: to be asked on the iPhone first instead of jumping straight into
-          the app, put a <b>Choose from Menu</b> action (&quot;Record
-          expense?&quot; → Yes / No) before <b>Open URLs</b> and move{" "}
-          <b>Open URLs</b> under &quot;Yes&quot;.
-        </p>
+        <details className="text-xs text-muted-foreground">
+          <summary className="cursor-pointer font-medium">
+            Optional: fill in the amount automatically
+          </summary>
+          <p className="mt-2">
+            In the <b>Open URLs</b> action, tap at the end of the link and type{" "}
+            <code>&amp;amount=</code>, then tap <b>Shortcut Input</b> above the
+            keyboard and pick <b>Amount</b>. Do the same with{" "}
+            <code>&amp;merchant=</code> + <b>Merchant</b> and{" "}
+            <code>&amp;card=</code> + <b>Card or Pass</b>. The popup then shows
+            the payment ready to record in one tap. The account is matched by
+            card name (name your account like the Wallet card) and the category
+            is reused from your last expense at the same merchant.
+          </p>
+        </details>
       </CardContent>
     </Card>
   );
