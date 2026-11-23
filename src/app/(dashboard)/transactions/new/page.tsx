@@ -222,10 +222,14 @@ export default function NewTransactionPage() {
                 </span>
                 <div>
                   <h2 id="tap-prompt-title" className="font-semibold">
-                    Record this tap payment?
+                    {tapPayment.amount
+                      ? "Record this tap payment?"
+                      : "Note your payment"}
                   </h2>
                   <p className="text-xs text-muted-foreground">
-                    Detected from your iPhone Wallet
+                    {tapPayment.amount
+                      ? "Detected from your iPhone Wallet"
+                      : "You just paid with Apple Pay"}
                   </p>
                 </div>
               </div>
@@ -239,23 +243,90 @@ export default function NewTransactionPage() {
               </button>
             </div>
 
-            <div className="mb-4 rounded-xl border p-4 text-center">
-              <div className="text-3xl font-bold">
-                {amount
-                  ? formatCurrency(
-                      Number(amount),
-                      sourceAccount?.currency || "USD"
-                    )
-                  : "Amount not detected"}
+            {tapPayment.amount ? (
+              <div className="mb-4 rounded-xl border p-4 text-center">
+                <div className="text-3xl font-bold">
+                  {formatCurrency(
+                    Number(amount),
+                    sourceAccount?.currency || "USD"
+                  )}
+                </div>
+                {tapPayment.merchant && (
+                  <div className="mt-1 font-medium">{tapPayment.merchant}</div>
+                )}
+                <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+                  <div>Account: {sourceAccount?.name || "—"}</div>
+                  <div>Category: {tapCategory?.name || "Uncategorized"}</div>
+                </div>
               </div>
-              {tapPayment.merchant && (
-                <div className="mt-1 font-medium">{tapPayment.merchant}</div>
-              )}
-              <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
-                <div>Account: {sourceAccount?.name || "—"}</div>
-                <div>Category: {tapCategory?.name || "Uncategorized"}</div>
+            ) : (
+              <div className="mb-4 space-y-3">
+                <div className="space-y-1">
+                  <Label htmlFor="tap-amount">
+                    Amount{sourceAccount ? ` (${sourceAccount.currency})` : ""}
+                  </Label>
+                  <Input
+                    id="tap-amount"
+                    type="number"
+                    inputMode="decimal"
+                    step="0.01"
+                    min="0.01"
+                    placeholder="0.00"
+                    autoFocus
+                    className="h-12 text-center text-2xl font-bold"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="tap-note">Note</Label>
+                  <Input
+                    id="tap-note"
+                    placeholder="e.g. Coffee at Starbucks"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label htmlFor="tap-account">Account</Label>
+                    <select
+                      id="tap-account"
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                      value={accountId}
+                      onChange={(e) => setAccountId(e.target.value)}
+                    >
+                      {accounts.length === 0 && (
+                        <option value="">No accounts yet</option>
+                      )}
+                      {accounts.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="tap-category">Category</Label>
+                    <select
+                      id="tap-category"
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                      value={categoryId}
+                      onChange={(e) => setCategoryId(e.target.value)}
+                    >
+                      <option value="">Uncategorized</option>
+                      {categories
+                        .filter((c) => c.type === "expense")
+                        .map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="flex flex-col gap-2">
               <Button
@@ -264,7 +335,7 @@ export default function NewTransactionPage() {
                 disabled={loading || !accountId || !amount}
                 onClick={() => saveTransaction()}
               >
-                Record as expense
+                {tapPayment.amount ? "Record as expense" : "Save expense"}
               </Button>
               <Button
                 type="button"
@@ -272,7 +343,7 @@ export default function NewTransactionPage() {
                 className="w-full"
                 onClick={() => setShowTapPrompt(false)}
               >
-                Edit details first
+                {tapPayment.amount ? "Edit details first" : "More options"}
               </Button>
               <Button
                 type="button"
